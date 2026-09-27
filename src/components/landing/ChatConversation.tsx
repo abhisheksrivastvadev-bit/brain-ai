@@ -9,6 +9,7 @@ import {
   FileTextIcon,
   CloseIcon,
   ArrowRightIcon,
+  RefreshIcon,
 } from '../icons'
 import type { ChatSession, DocumentItem, User } from '../../types'
 import './ChatConversation.css'
@@ -21,6 +22,8 @@ interface ChatConversationProps {
   onOpenUploadModal: () => void
   attachedDoc: DocumentItem | null
   onRemoveAttachedDoc: () => void
+  isLoading?: boolean
+  onRefreshHistory?: () => void
 }
 
 export const ChatConversation: React.FC<ChatConversationProps> = ({
@@ -31,17 +34,24 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
   onOpenUploadModal,
   attachedDoc,
   onRemoveAttachedDoc,
+  isLoading = false,
+  onRefreshHistory,
 }) => {
   const [inputText, setInputText] = useState('')
   const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null)
   const [expandedReasoning, setExpandedReasoning] = useState<Record<string, boolean>>({})
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Scroll to bottom when messages change
+  // Scroll only the chat messages container to bottom (avoids scrolling window/body)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [chat.messages])
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      })
+    }
+  }, [chat.messages, isLoading])
 
   // Auto-resize input
   useEffect(() => {
@@ -66,7 +76,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault()
-    if (!inputText.trim() && !attachedDoc) return
+    if ((!inputText.trim() && !attachedDoc) || isLoading) return
     onSendMessage(inputText.trim(), attachedDoc?.name)
     setInputText('')
   }
@@ -99,10 +109,36 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
             <span className="brain-chat-header-desc">{chat.description}</span>
           </div>
         </div>
+
+        <div className="brain-chat-header-right">
+          <div className="brain-chat-session-badge" title="Active Backend Session">
+            <span className="brain-session-status-dot" />
+            <span className="brain-session-badge-label">Session:</span>
+            <strong>{chat.id}</strong>
+          </div>
+          {onRefreshHistory && (
+            <button
+              type="button"
+              className="brain-chat-sync-btn"
+              onClick={onRefreshHistory}
+              disabled={isLoading}
+              title="Sync latest conversation history from backend"
+              aria-label="Sync history"
+            >
+              <RefreshIcon size={13} className={isLoading ? 'brain-spin' : ''} />
+              <span>Sync History</span>
+            </button>
+          )}
+        </div>
       </header>
 
-      {/* Message Stream */}
-      <div className="brain-chat-messages" role="log" aria-live="polite">
+      {/* Message Stream - independently scrollable container */}
+      <div
+        ref={messagesContainerRef}
+        className="brain-chat-messages"
+        role="log"
+        aria-live="polite"
+      >
         {chat.messages.map((msg) => {
           const isUser = msg.sender === 'user'
           return (
@@ -230,7 +266,33 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
             </div>
           )
         })}
-        <div ref={messagesEndRef} />
+
+        {/* Thinking Indicator */}
+        {isLoading && (
+          <div className="brain-msg-row brain-msg-row--assistant">
+            <div className="brain-msg-avatar">
+              <div className="brain-msg-ai-icon brain-pulse-glow">
+                <BrainIcon size={16} />
+              </div>
+            </div>
+            <div className="brain-msg-bubble">
+              <div className="brain-msg-meta">
+                <span className="brain-msg-sender">Brain AI</span>
+                <span className="brain-msg-time">Generating response...</span>
+              </div>
+              <div className="brain-msg-text brain-msg-text--thinking">
+                <div className="brain-thinking-wrapper">
+                  <span className="brain-thinking-text">Contacting Brain AI backend...</span>
+                  <div className="brain-typing-dots">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Floating Bottom Input Bar */}
@@ -252,23 +314,25 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
           )}
 
           <div className="brain-chat-input-row">
-            <button
+            {/* <button
               type="button"
               className="brain-chat-tool-btn"
               onClick={onOpenUploadModal}
               title="Attach Document"
+              disabled={isLoading}
             >
               <PaperclipIcon size={17} />
-            </button>
+            </button> */}
 
             <textarea
               ref={textareaRef}
               rows={1}
               id="chat-input-textarea"
-              placeholder={`Ask about ${chat.title}...`}
+              placeholder={isLoading ? 'Brain AI is generating a response...' : `Ask about ${chat.title}...`}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
+              disabled={isLoading}
               className="brain-chat-textarea"
             />
 
@@ -276,10 +340,14 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
               type="submit"
               className="brain-chat-send-btn"
               id="btn-chat-send"
-              disabled={!inputText.trim() && !attachedDoc}
+              disabled={(!inputText.trim() && !attachedDoc) || isLoading}
               aria-label="Send message"
             >
-              <SendIcon size={16} />
+              {isLoading ? (
+                <RefreshIcon size={16} className="brain-spin" />
+              ) : (
+                <SendIcon size={16} />
+              )}
             </button>
           </div>
         </form>

@@ -2,13 +2,16 @@
 
 .brain-app {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
 }
 
 .brain-app-wrapper {
   position: relative;
   width: 100%;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
 }
 
 .brain-view-switcher-bar {

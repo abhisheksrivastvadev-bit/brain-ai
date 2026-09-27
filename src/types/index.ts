@@ -63,3 +63,27 @@ export interface AppSettings {
   streamResponse: boolean
   apiKey?: string
 }
+
+export interface ChatHistoryItem {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface ChatHistoryResponse {
+  success: boolean
+  message: string
+  data: {
+    conversation: ChatHistoryItem[]
+  }
+}
+
+export interface ChatPostRequest {
+  session_id: string
+  message: string
+  system_prompt?: string
+}
+
+export interface ChatPostResponse {
+  message: string
+}
+

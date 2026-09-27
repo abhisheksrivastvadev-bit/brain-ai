@@ -1,7 +1,7 @@
 .brain-sidebar {
   width: 280px;
   min-width: 280px;
-  height: calc(100vh - 64px);
+  height: 100%;
   background: var(--bg-surface);
   border-right: 1px solid var(--border-subtle);
   display: flex;
@@ -9,6 +9,8 @@
   position: relative;
   z-index: 20;
   transition: all var(--transition-normal);
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .brain-sidebar-header {
@@ -17,6 +19,7 @@
   flex-direction: column;
   gap: 12px;
   border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
 
 .brain-sidebar-mobile-header {
@@ -144,14 +147,34 @@
   align-items: center;
 }
 
-/* Scroll area */
+/* Scroll area - independent history list scrolling */
 .brain-sidebar-scroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 16px 12px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.brain-sidebar-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.brain-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.brain-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+}
+
+.brain-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-400);
 }
 
 /* Sections */
@@ -353,6 +376,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .brain-sidebar-usage-pill {

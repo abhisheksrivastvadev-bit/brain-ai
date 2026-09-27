@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { TopNavbar } from '../../components/landing/TopNavbar'
 import { Sidebar } from '../../components/landing/Sidebar'
 import { HeroPrompt } from '../../components/landing/HeroPrompt'
@@ -9,7 +9,8 @@ import { SettingsModal } from '../../components/landing/SettingsModal'
 import {
   CURRENT_USER,
 } from '../../data/mockData'
-import type { AppSettings, ChatSession, DocumentItem } from '../../types'
+import type { AppSettings, ChatSession, DocumentItem, ChatMessage } from '../../types'
+import { chatService, mapHistoryToMessages, extractCodeBlock } from '../../services'
 import { useTheme } from '../../hooks'
 import './LandingPage.css'
 
@@ -24,11 +25,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 }) => {
   const { isDark, toggleTheme } = useTheme()
 
-  // Chat sessions state (initialized with Python, React, RAG, AI Agents from wireframe)
+  // Chat sessions state
   const [chats, setChats] = useState<ChatSession[]>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
+  const [isSending, setIsSending] = useState(false)
 
-  // Documents state (Resume.pdf, Project.pdf from wireframe)
+  // Documents state
   const [documents, setDocuments] = useState<DocumentItem[]>([])
   const [selectedDocForModal, setSelectedDocForModal] = useState<DocumentItem | null>(null)
   const [attachedDocForPrompt, setAttachedDocForPrompt] = useState<DocumentItem | null>(null)
@@ -47,6 +49,63 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     webSearchEnabled: false,
     streamResponse: true,
   })
+
+  // Pre-load conversation history on initial mount (focusing on session 002)
+  useEffect(() => {
+    let isMounted = true
+
+    const loadInitialHistory = async () => {
+      const initialSessions: ChatSession[] = []
+
+      // 1. Fetch Session 002 history: http://127.0.0.1:8000/api/history/?session_id=002
+      try {
+        const res002 = await chatService.getChatHistory('002')
+        if (res002?.data?.conversation && res002.data.conversation.length > 0 && isMounted) {
+          const lastMsg = res002.data.conversation[res002.data.conversation.length - 1]
+          initialSessions.push({
+            id: '002',
+            title: 'Session 002 (Preeti)',
+            icon: 'default',
+            description: lastMsg.content.slice(0, 48) + '...',
+            updatedAt: 'Active',
+            pinned: true,
+            messages: mapHistoryToMessages(res002.data.conversation),
+          })
+        }
+      } catch (err) {
+        console.warn('[LandingPage] Could not pre-fetch session 002:', err)
+      }
+
+      // 2. Fetch Session 001 history if available
+      try {
+        const res001 = await chatService.getChatHistory('001')
+        if (res001?.data?.conversation && res001.data.conversation.length > 0 && isMounted) {
+          const lastMsg01 = res001.data.conversation[res001.data.conversation.length - 1]
+          initialSessions.push({
+            id: '001',
+            title: 'Session 001 (Abhishek)',
+            icon: 'default',
+            description: lastMsg01.content.slice(0, 48) + '...',
+            updatedAt: 'Active',
+            pinned: false,
+            messages: mapHistoryToMessages(res001.data.conversation),
+          })
+        }
+      } catch {
+        // optional session 001
+      }
+
+      if (initialSessions.length > 0 && isMounted) {
+        setChats(initialSessions)
+      }
+    }
+
+    loadInitialHistory()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   // Currently active chat session
   const activeChat = chats.find((c) => c.id === activeChatId) || null
@@ -72,125 +131,145 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     }
   }
 
-  // Handler: Send message (either in landing hero or active conversation)
-  const handleSendMessage = (text: string, attachedDocName?: string) => {
-    if (!text.trim() && !attachedDocName) return
+  // Handler: Refresh conversation history from backend
+  const handleRefreshHistory = useCallback(async () => {
+    const sessionId = activeChatId || '002'
+    setIsSending(true)
+    try {
+      const historyRes = await chatService.getChatHistory(sessionId)
+      if (historyRes?.data?.conversation) {
+        const syncedMessages = mapHistoryToMessages(historyRes.data.conversation)
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === sessionId
+              ? {
+                ...c,
+                updatedAt: 'Just now',
+                messages: syncedMessages,
+              }
+              : c
+          )
+        )
+      }
+    } catch (err) {
+      console.error('[LandingPage] Failed to sync history:', err)
+    } finally {
+      setIsSending(false)
+    }
+  }, [activeChatId])
 
+  // Handler: Send message (both in landing hero and active conversation)
+  // Executes:
+  // 1. chat API: POST http://127.0.0.1:8000/api/chat/
+  // 2. history API: GET http://127.0.0.1:8000/api/history/?session_id={sessionId}
+  const handleSendMessage = async (text: string, attachedDocName?: string) => {
+    if (!text.trim() && !attachedDocName) return
+    if (isSending) return
+
+    const sessionId = activeChatId || '002'
+    const promptText = text.trim()
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    const userMsg = {
+
+    const userMsg: ChatMessage = {
       id: `msg_u_${Date.now()}`,
-      sender: 'user' as const,
-      content: text || `Please analyze ${attachedDocName}`,
+      sender: 'user',
+      content: promptText,
       timestamp: now,
       attachment: attachedDocName,
     }
 
-    // Generate intelligent contextual response
-    const generateAiResponse = (prompt: string, docContext?: string) => {
-      const lower = prompt.toLowerCase()
-
-      if (lower.includes('python') || lower.includes('gil')) {
-        return {
-          content:
-            'In **CPython 3.13**, the removal of the Global Interpreter Lock (GIL) enables true multi-core parallel execution across CPU threads.\n\n### Practical Recommendations:\n- Use `ThreadPoolExecutor` for CPU-intensive mathematical or data transformation batches.\n- Ensure extensions (C/C++ or PyO3) are built with the free-threaded ABI.\n- `asyncio` remains best for event-driven concurrent networking.',
-          codeSnippet: {
-            language: 'python',
-            title: 'free_threaded_demo.py',
-            code: `import threading
-
-def worker_task(worker_id: int):
-    acc = sum(x * x for x in range(5_000_000))
-    print(f"Worker {worker_id} computed {acc}")
-
-threads = [threading.Thread(target=worker_task, args=(i,)) for i in range(4)]
-for t in threads: t.start()
-for t in threads: t.join()`,
-          },
-          reasoning: 'Evaluated PEP 703 specifications and multi-core CPU scheduling behavior.',
-        }
+    // Optimistically show user message and set active chat
+    setChats((prev) => {
+      const existing = prev.find((c) => c.id === sessionId)
+      if (existing) {
+        return prev.map((c) =>
+          c.id === sessionId
+            ? {
+              ...c,
+              messages: [...c.messages, userMsg],
+              updatedAt: 'Just now',
+            }
+            : c
+        )
       }
-
-      if (lower.includes('react') || lower.includes('hook') || lower.includes('debounce')) {
-        return {
-          content:
-            'Here is a robust, production-ready **TypeScript** debounce hook for React 19:\n\n- Automatically cancels timeouts on dependency changes or unmount\n- Supports parameterized debounce intervals',
-          codeSnippet: {
-            language: 'typescript',
-            title: 'useDebounce.ts',
-            code: `import { useState, useEffect } from 'react'
-
-export function useDebounce<T>(value: T, delay: number = 300): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value)
-
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedValue(value), delay)
-    return () => clearTimeout(handler)
-  }, [value, delay])
-
-  return debouncedValue
-}`,
-          },
-          reasoning: 'Applied React 19 useEffect lifecycle rules and memory leak prevention.',
-        }
+      const newChat: ChatSession = {
+        id: sessionId,
+        title: `Session ${sessionId}`,
+        icon: 'default',
+        description: promptText.slice(0, 48),
+        updatedAt: 'Just now',
+        messages: [userMsg],
       }
+      return [newChat, ...prev]
+    })
 
-      if (lower.includes('rag') || lower.includes('vector') || lower.includes('bm25')) {
-        return {
-          content:
-            '### Optimal Hybrid RAG Pipeline Architecture:\n1. **Dual Indexing**: Vector index (e.g. HNSW dense embeddings) + Lexical index (BM25).\n2. **RRF (Reciprocal Rank Fusion)**: Merges candidates based on rank reciprocal weights.\n3. **Cross-Encoder Reranking**: Re-evaluates top 40 candidates to extract the 5 highest-relevance passages for context injection.',
-          reasoning: 'Constructed hybrid retrieval topology with reciprocal rank fusion formulation.',
-        }
-      }
-
-      if (docContext || lower.includes('resume') || lower.includes('project')) {
-        return {
-          content: `### Document Analysis for **${docContext || 'Uploaded Context'}**:\n- **Overview**: Document parsed via Brain AI Vector Ingestion.\n- **Key Highlights**: High proficiency in full-stack architecture, React, Python, RAG pipelines, and autonomous AI agents.\n- **Recommendation**: Ready for interactive contextual Q&A.`,
-          reasoning: `Extracted semantic chunking and embedding matches from ${docContext || 'context document'}.`,
-        }
-      }
-
-      return {
-        content: `I've processed your query with **${settings.model}**:\n\n> "${text}"\n\nBrain AI has synthesized a verified response following your system instructions. How would you like to proceed or expand on this topic?`,
-        reasoning: 'Evaluated intent, retrieved relevant cognitive memory, and synthesized output.',
-      }
+    if (!activeChatId) {
+      setActiveChatId(sessionId)
     }
 
-    const aiRes = generateAiResponse(text, attachedDocName)
-    const assistantMsg = {
-      id: `msg_a_${Date.now() + 1}`,
-      sender: 'assistant' as const,
-      content: aiRes.content,
-      timestamp: now,
-      codeSnippet: aiRes.codeSnippet,
-      reasoning: aiRes.reasoning,
-    }
+    setIsSending(true)
+    setAttachedDocForPrompt(null)
 
-    if (activeChatId) {
-      // Append to active chat
+    try {
+      let system_prompt_for_api: string = `You are Brain AI, a very aggressive AI assistant.  Always respond in a aggresive mood`
+
+      // 1. Send message to Chat API: POST http://127.0.0.1:8000/api/chat/
+      const chatRes = await chatService.sendMessage(promptText, system_prompt_for_api, sessionId)
+
+      // 2. Fetch updated history: GET http://127.0.0.1:8000/api/history/?session_id={sessionId}
+      const historyRes = await chatService.getChatHistory(sessionId)
+
+      if (historyRes?.data?.conversation && historyRes.data.conversation.length > 0) {
+        const syncedMessages = mapHistoryToMessages(historyRes.data.conversation)
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === sessionId
+              ? {
+                ...c,
+                description: promptText.slice(0, 48),
+                updatedAt: 'Just now',
+                messages: syncedMessages,
+              }
+              : c
+          )
+        )
+      } else {
+        // Fallback: append assistant reply directly from chat response
+        const { cleanContent, codeSnippet } = extractCodeBlock(chatRes.message)
+        const assistantMsg: ChatMessage = {
+          id: `msg_a_${Date.now()}`,
+          sender: 'assistant',
+          content: cleanContent,
+          codeSnippet,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === sessionId
+              ? { ...c, messages: [...c.messages, assistantMsg], updatedAt: 'Just now' }
+              : c
+          )
+        )
+      }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown communication error'
+      console.error('[LandingPage] Chat API Error:', err)
+      const errorAssistantMsg: ChatMessage = {
+        id: `msg_err_${Date.now()}`,
+        sender: 'assistant',
+        content: `⚠️ **Connection Error**\n\nCould not reach the Brain AI backend at http://127.0.0.1:8000.\n- **Details**: \`${errorMsg}\`\n\nPlease ensure \`python run.py\` is running.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }
       setChats((prev) =>
         prev.map((c) =>
-          c.id === activeChatId
-            ? { ...c, messages: [...c.messages, userMsg, assistantMsg], updatedAt: 'Just now' }
+          c.id === sessionId
+            ? { ...c, messages: [...c.messages, errorAssistantMsg], updatedAt: 'Just now' }
             : c
         )
       )
-    } else {
-      // Create new chat and set it active
-      const title = text.slice(0, 24).trim() || attachedDocName || 'New Conversation'
-      const newChat: ChatSession = {
-        id: `chat_${Date.now()}`,
-        title,
-        icon: 'default',
-        description: text.slice(0, 48),
-        updatedAt: 'Just now',
-        messages: [userMsg, assistantMsg],
-      }
-      setChats((prev) => [newChat, ...prev])
-      setActiveChatId(newChat.id)
+    } finally {
+      setIsSending(false)
     }
-
-    // Reset attached document after sending
-    setAttachedDocForPrompt(null)
   }
 
   // Handler: Click Document in Sidebar -> open inspection modal
@@ -252,6 +331,8 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
               onOpenUploadModal={() => setIsUploadModalOpen(true)}
               attachedDoc={attachedDocForPrompt}
               onRemoveAttachedDoc={() => setAttachedDocForPrompt(null)}
+              isLoading={isSending}
+              onRefreshHistory={handleRefreshHistory}
             />
           ) : (
             <HeroPrompt
@@ -260,6 +341,7 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
               onRemoveAttachedDoc={() => setAttachedDocForPrompt(null)}
               onOpenUploadModal={() => setIsUploadModalOpen(true)}
               activeModel={settings.model}
+              isLoading={isSending}
             />
           )}
         </main>

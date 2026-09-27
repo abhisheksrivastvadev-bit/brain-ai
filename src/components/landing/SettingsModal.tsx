@@ -78,7 +78,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           >
             General & Prompt
           </button>
-          <button
+          {/* <button
             type="button"
             className={`brain-settings-tab ${activeTab === 'model' ? 'active' : ''}`}
             onClick={() => setActiveTab('model')}
@@ -91,13 +91,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             onClick={() => setActiveTab('keys')}
           >
             API Credentials
-          </button>
+          </button> */}
         </div>
 
         <div className="brain-modal-body">
           {activeTab === 'general' && (
             <div className="brain-settings-panel">
-              <div className="brain-setting-group">
+              {/* <div className="brain-setting-group">
                 <label className="brain-setting-label">Default Cognitive Model</label>
                 <select
                   value={formState.model}
@@ -109,7 +109,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <option value="GPT-4o Omni">GPT-4o Omni</option>
                 </select>
                 <span className="brain-setting-hint">Primary model used for new chat generation and code analysis.</span>
-              </div>
+              </div> */}
 
               <div className="brain-setting-group">
                 <label className="brain-setting-label">System Instructions / Persona</label>
@@ -122,7 +122,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 />
               </div>
 
-              <div className="brain-setting-toggle-row">
+              {/* <div className="brain-setting-toggle-row">
                 <div>
                   <div className="brain-setting-toggle-title">Real-Time Web Retrieval</div>
                   <div className="brain-setting-toggle-desc">Automatically fetch latest docs and internet context</div>
@@ -133,7 +133,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   onChange={(e) => setFormState({ ...formState, webSearchEnabled: e.target.checked })}
                   className="brain-setting-checkbox"
                 />
-              </div>
+              </div> */}
             </div>
           )}
 
