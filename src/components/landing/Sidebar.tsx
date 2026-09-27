@@ -5,9 +5,7 @@ import {
   CodeIcon,
   DatabaseIcon,
   BotIcon,
-  FileTextIcon,
   SettingsIcon,
-  UploadCloudIcon,
   PinIcon,
   TrashIcon,
   CloseIcon,
@@ -37,17 +35,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectChat,
   onNewChat,
   onDeleteChat,
-  documents,
-  selectedDocId,
-  onSelectDocument,
-  onOpenUploadModal,
+  documents: _documents,
+  selectedDocId: _selectedDocId,
+  onSelectDocument: _onSelectDocument,
+  onOpenUploadModal: _onOpenUploadModal,
   onOpenSettings,
   isOpenMobile,
   onCloseMobile,
 }) => {
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Filter chats & documents based on search query
+  // Filter chats based on search query
   const filteredChats = useMemo(() => {
     if (!searchQuery.trim()) return chats
     const q = searchQuery.toLowerCase()
@@ -55,16 +53,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       (c) => c.title.toLowerCase().includes(q) || c.description.toLowerCase().includes(q)
     )
   }, [chats, searchQuery])
-
-  const filteredDocs = useMemo(() => {
-    if (!searchQuery.trim()) return documents
-    const q = searchQuery.toLowerCase()
-    return documents.filter(
-      (d) =>
-        d.name.toLowerCase().includes(q) ||
-        d.topics.some((t) => t.toLowerCase().includes(q))
-    )
-  }, [documents, searchQuery])
 
   const getChatIcon = (iconType: string) => {
     switch (iconType) {
@@ -126,7 +114,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <PlusIcon size={16} />
             </span>
             <span className="brain-new-chat-text">+ New Chat</span>
-            <kbd className="brain-shortcut-badge">⌘N</kbd>
           </button>
 
           {/* Quick Filter Search */}
@@ -159,9 +146,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="brain-nav-section" id="section-chats">
             <div className="brain-section-header">
               <span className="brain-section-title">Chats</span>
-              <span className="brain-section-count">{chats.length}</span>
+              {
+                chats.length > 0 &&
+                <span className="brain-section-count">{chats.length}</span>
+              }
             </div>
-            <div className="brain-section-divider" />
 
             <div className="brain-nav-list" role="list">
               {filteredChats.map((chat) => {
@@ -214,7 +203,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           {/* Section: Documents */}
-          <div className="brain-nav-section" id="section-documents">
+          {/* <div className="brain-nav-section" id="section-documents">
             <div className="brain-section-header">
               <span className="brain-section-title">Documents</span>
               <div className="brain-section-header-actions">
@@ -265,20 +254,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="brain-empty-nav-state">No matching documents</div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Sidebar Footer: Token usage & Settings */}
         <div className="brain-sidebar-footer">
-          <div className="brain-sidebar-usage-pill">
-            <div className="brain-usage-header">
-              <span>Token Budget</span>
-              <span className="brain-usage-val">34.2k / 128k</span>
-            </div>
-            <div className="brain-usage-bar">
-              <div className="brain-usage-fill" style={{ width: '27%' }} />
-            </div>
-          </div>
 
           <button
             type="button"

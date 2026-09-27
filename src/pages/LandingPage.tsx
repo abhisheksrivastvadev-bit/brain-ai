@@ -8,8 +8,6 @@ import { UploadModal } from '../components/landing/UploadModal'
 import { SettingsModal } from '../components/landing/SettingsModal'
 import {
   CURRENT_USER,
-  INITIAL_CHATS,
-  INITIAL_DOCUMENTS,
 } from '../data/mockData'
 import type { AppSettings, ChatSession, DocumentItem } from '../types'
 import { useTheme } from '../hooks'
@@ -27,11 +25,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const { isDark, toggleTheme } = useTheme()
 
   // Chat sessions state (initialized with Python, React, RAG, AI Agents from wireframe)
-  const [chats, setChats] = useState<ChatSession[]>(INITIAL_CHATS)
+  const [chats, setChats] = useState<ChatSession[]>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
 
   // Documents state (Resume.pdf, Project.pdf from wireframe)
-  const [documents, setDocuments] = useState<DocumentItem[]>(INITIAL_DOCUMENTS)
+  const [documents, setDocuments] = useState<DocumentItem[]>([])
   const [selectedDocForModal, setSelectedDocForModal] = useState<DocumentItem | null>(null)
   const [attachedDocForPrompt, setAttachedDocForPrompt] = useState<DocumentItem | null>(null)
 
@@ -42,10 +40,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   // App settings state
   const [settings, setSettings] = useState<AppSettings>({
-    model: 'Nexora Ultra 3.5',
+    model: 'Brain AI Reasoning Pro',
     temperature: 0.7,
     systemPrompt:
-      'You are Nexora, a world-class cognitive AI built by Brain AI. You deliver precise, highly competent, clean code and deep technical insights.',
+      'You are Brain AI, a world-class cognitive assistant. You deliver precise, highly competent, clean code and deep technical insights.',
     webSearchEnabled: false,
     streamResponse: true,
   })
@@ -152,7 +150,7 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
       }
 
       return {
-        content: `I've processed your query with **${settings.model}**:\n\n> "${text}"\n\nNexora has synthesized a verified response following your system instructions. How would you like to proceed or expand on this topic?`,
+        content: `I've processed your query with **${settings.model}**:\n\n> "${text}"\n\nBrain AI has synthesized a verified response following your system instructions. How would you like to proceed or expand on this topic?`,
         reasoning: 'Evaluated intent, retrieved relevant cognitive memory, and synthesized output.',
       }
     }
@@ -220,7 +218,6 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
         isDark={isDark}
         onToggleTheme={toggleTheme}
         onOpenSettings={() => setIsSettingsModalOpen(true)}
-        activeModel={settings.model}
         onSelectModel={(model) => setSettings((prev) => ({ ...prev, model }))}
         onToggleDesignSystem={onToggleDesignSystem}
         isDesignSystemOpen={isDesignSystemOpen}
@@ -255,7 +252,6 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
               onOpenUploadModal={() => setIsUploadModalOpen(true)}
               attachedDoc={attachedDocForPrompt}
               onRemoveAttachedDoc={() => setAttachedDocForPrompt(null)}
-              activeModel={settings.model}
             />
           ) : (
             <HeroPrompt

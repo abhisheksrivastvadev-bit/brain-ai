@@ -88,7 +88,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               Upload Document for RAG
             </h3>
             <span className="brain-modal-sub">
-              Index PDFs, text files, or markdown to query with Nexora AI
+              Index PDFs, text files, or markdown to query with Brain AI
             </span>
           </div>
           <button

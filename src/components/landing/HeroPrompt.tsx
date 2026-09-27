@@ -5,13 +5,9 @@ import {
   MicIcon,
   SparklesIcon,
   SearchIcon,
-  CodeIcon,
-  DatabaseIcon,
-  BotIcon,
   FileTextIcon,
   CloseIcon,
 } from '../icons'
-import { QUICK_PROMPTS } from '../../data/mockData'
 import type { DocumentItem } from '../../types'
 import './HeroPrompt.css'
 
@@ -20,7 +16,7 @@ interface HeroPromptProps {
   attachedDoc: DocumentItem | null
   onRemoveAttachedDoc: () => void
   onOpenUploadModal: () => void
-  activeModel: string
+  activeModel?: string
 }
 
 export const HeroPrompt: React.FC<HeroPromptProps> = ({
@@ -28,7 +24,7 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
   attachedDoc,
   onRemoveAttachedDoc,
   onOpenUploadModal,
-  activeModel,
+  activeModel = 'Brain AI Reasoning Pro',
 }) => {
   const [inputText, setInputText] = useState('')
   const [isWebSearchActive, setIsWebSearchActive] = useState(false)
@@ -57,10 +53,6 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
     }
   }
 
-  const handlePromptCardClick = (promptText: string, attachDocName?: string) => {
-    onSendMessage(promptText, attachDocName)
-  }
-
   const toggleRecording = () => {
     if (isRecording) {
       setIsRecording(false)
@@ -74,31 +66,14 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
     }
   }
 
-  const getPromptIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'python':
-        return <CodeIcon size={16} className="brain-prompt-card-icon brain-prompt-icon--python" />
-      case 'react':
-        return <span className="brain-prompt-card-icon brain-prompt-icon--react">⚛</span>
-      case 'rag':
-        return <DatabaseIcon size={16} className="brain-prompt-card-icon brain-prompt-icon--rag" />
-      case 'agent':
-        return <BotIcon size={16} className="brain-prompt-card-icon brain-prompt-icon--agent" />
-      case 'doc':
-        return <FileTextIcon size={16} className="brain-prompt-card-icon brain-prompt-icon--doc" />
-      default:
-        return <SparklesIcon size={16} className="brain-prompt-card-icon" />
-    }
-  }
-
   return (
     <div className="brain-hero-landing" id="hero-landing-canvas">
       {/* Subtle ambient glowing orbs */}
       <div className="brain-hero-glow brain-hero-glow--1" />
       <div className="brain-hero-glow brain-hero-glow--2" />
 
-      <div className="brain-hero-content">
-        {/* Wireframe Hero Header: How can I help you? */}
+      {/* Center Area: How can I help you? */}
+      <div className="brain-hero-center-area">
         <div className="brain-hero-header">
           <div className="brain-hero-pill-badge">
             <SparklesIcon size={13} className="brain-hero-sparkle" />
@@ -107,12 +82,11 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
           <h1 className="brain-hero-title" id="hero-main-heading">
             How can I help you?
           </h1>
-          <p className="brain-hero-subtitle">
-            Powered by Nexora reasoning engine. Ask questions, analyze documents, or build software.
-          </p>
         </div>
+      </div>
 
-        {/* Central Wireframe Input Box: [ Ask Nexora anything... ] */}
+      {/* Bottom Docked Input Box: [ Ask anything... ] */}
+      <div className="brain-hero-bottom-bar">
         <form
           className="brain-prompt-box-container"
           id="brain-main-prompt-form"
@@ -141,12 +115,12 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
                 ref={textareaRef}
                 id="main-prompt-textarea"
                 rows={1}
-                placeholder="Ask Nexora anything..."
+                placeholder="Ask anything..."
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="brain-prompt-textarea"
-                aria-label="Ask Nexora anything"
+                aria-label="Ask anything"
               />
             </div>
 
@@ -154,7 +128,7 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
             <div className="brain-prompt-toolbar">
               <div className="brain-prompt-tools-left">
                 {/* Attach Document */}
-                <button
+                {/* <button
                   type="button"
                   className="brain-tool-btn"
                   id="btn-prompt-attach"
@@ -164,10 +138,10 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
                 >
                   <PaperclipIcon size={16} />
                   <span className="brain-tool-btn-label">Attach</span>
-                </button>
+                </button> */}
 
                 {/* Web Search Toggle */}
-                <button
+                {/* <button
                   type="button"
                   className={`brain-tool-btn ${isWebSearchActive ? 'brain-tool-btn--active' : ''}`}
                   id="btn-prompt-websearch"
@@ -177,10 +151,10 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
                 >
                   <SearchIcon size={15} />
                   <span className="brain-tool-btn-label">Web</span>
-                </button>
+                </button> */}
 
                 {/* Voice Input */}
-                <button
+                {/* <button
                   type="button"
                   className={`brain-tool-btn ${isRecording ? 'brain-tool-btn--recording' : ''}`}
                   id="btn-prompt-voice"
@@ -190,11 +164,11 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
                 >
                   <MicIcon size={16} />
                   {isRecording && <span className="brain-voice-pulse" />}
-                </button>
+                </button> */}
               </div>
 
               <div className="brain-prompt-tools-right">
-                <span className="brain-model-indicator">{activeModel}</span>
+                {/* <span className="brain-model-indicator">{activeModel}</span> */}
                 <button
                   type="submit"
                   className="brain-prompt-send-btn"
@@ -208,32 +182,6 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
             </div>
           </div>
         </form>
-
-        {/* Quick Suggestion Prompts matching sidebar topics (Python, React, RAG, AI Agents, Docs) */}
-        <div className="brain-suggestions-section">
-          <div className="brain-suggestions-header">
-            <span>SUGGESTED CAPABILITIES</span>
-          </div>
-
-          <div className="brain-suggestions-grid" role="list">
-            {QUICK_PROMPTS.map((item, index) => (
-              <div
-                key={index}
-                className="brain-suggestion-card"
-                id={`suggestion-card-${index}`}
-                role="listitem"
-                onClick={() => handlePromptCardClick(item.prompt, item.attachDoc)}
-              >
-                <div className="brain-suggestion-card-header">
-                  {getPromptIcon(item.icon)}
-                  <span className="brain-suggestion-category">{item.category}</span>
-                </div>
-                <h2 className="brain-suggestion-title">{item.title}</h2>
-                <p className="brain-suggestion-subtitle">{item.subtitle}</p>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   )

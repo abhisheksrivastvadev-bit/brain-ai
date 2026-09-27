@@ -21,7 +21,6 @@ interface ChatConversationProps {
   onOpenUploadModal: () => void
   attachedDoc: DocumentItem | null
   onRemoveAttachedDoc: () => void
-  activeModel: string
 }
 
 export const ChatConversation: React.FC<ChatConversationProps> = ({
@@ -32,7 +31,6 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
   onOpenUploadModal,
   attachedDoc,
   onRemoveAttachedDoc,
-  activeModel,
 }) => {
   const [inputText, setInputText] = useState('')
   const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null)
@@ -101,10 +99,6 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
             <span className="brain-chat-header-desc">{chat.description}</span>
           </div>
         </div>
-
-        <div className="brain-chat-header-right">
-          <span className="brain-chat-model-tag">{activeModel}</span>
-        </div>
       </header>
 
       {/* Message Stream */}
@@ -131,7 +125,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
               <div className="brain-msg-bubble">
                 <div className="brain-msg-meta">
                   <span className="brain-msg-sender">
-                    {isUser ? currentUser.name : 'Nexora AI'}
+                    {isUser ? currentUser.name : 'Brain AI'}
                   </span>
                   <span className="brain-msg-time">{msg.timestamp}</span>
                 </div>
@@ -271,7 +265,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
               ref={textareaRef}
               rows={1}
               id="chat-input-textarea"
-              placeholder={`Ask Nexora about ${chat.title}...`}
+              placeholder={`Ask about ${chat.title}...`}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}

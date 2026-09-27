@@ -1,13 +1,11 @@
 import React, { useState } from 'react'
 import {
   BrainIcon,
-  SparklesIcon,
   SunIcon,
   MoonIcon,
   UserIcon,
   ChevronDownIcon,
   SlidersIcon,
-  CheckIcon,
 } from '../icons'
 import { Badge, Button } from '../ui'
 import type { User } from '../../types'
@@ -18,32 +16,22 @@ interface TopNavbarProps {
   isDark: boolean
   onToggleTheme: () => void
   onOpenSettings: () => void
-  activeModel: string
-  onSelectModel: (model: string) => void
+  onSelectModel?: (model: string) => void
   onToggleDesignSystem: () => void
   isDesignSystemOpen: boolean
   onToggleSidebarMobile: () => void
 }
-
-const AVAILABLE_MODELS = [
-  { id: 'nexora-3.5', name: 'Nexora Ultra 3.5', tag: 'Fast & Smart' },
-  { id: 'nexora-pro', name: 'Nexora Reasoning Pro', tag: 'Deep Thinking' },
-  { id: 'claude-sonnet', name: 'Claude 3.5 Sonnet', tag: 'Coding' },
-  { id: 'gpt-4o', name: 'GPT-4o Omni', tag: 'Multimodal' },
-]
 
 export const TopNavbar: React.FC<TopNavbarProps> = ({
   user,
   isDark,
   onToggleTheme,
   onOpenSettings,
-  activeModel,
-  onSelectModel,
+  onSelectModel: _onSelectModel,
   onToggleDesignSystem,
   isDesignSystemOpen,
   onToggleSidebarMobile,
 }) => {
-  const [modelDropdownOpen, setModelDropdownOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   return (
@@ -70,55 +58,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           <div className="brain-brand-text">
             <div className="brain-brand-heading">
               <span className="brain-brand-name">Brain AI</span>
-              <span className="brain-brand-badge">PRO</span>
             </div>
-            <span className="brain-brand-subheading">Nexora Engine</span>
           </div>
-        </div>
-
-        {/* Model Switcher Pill */}
-        <div className="brain-model-selector-wrapper">
-          <button
-            type="button"
-            className="brain-model-pill"
-            id="btn-model-selector"
-            onClick={() => setModelDropdownOpen((prev) => !prev)}
-            aria-expanded={modelDropdownOpen}
-            aria-haspopup="true"
-          >
-            <SparklesIcon size={14} className="brain-model-sparkle" />
-            <span className="brain-model-name">{activeModel}</span>
-            <ChevronDownIcon size={14} className={`brain-model-chevron ${modelDropdownOpen ? 'open' : ''}`} />
-          </button>
-
-          {modelDropdownOpen && (
-            <>
-              <div
-                className="brain-dropdown-backdrop"
-                onClick={() => setModelDropdownOpen(false)}
-              />
-              <div className="brain-model-dropdown-menu" id="model-dropdown-menu">
-                <div className="brain-dropdown-header">Cognitive Models</div>
-                {AVAILABLE_MODELS.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    className={`brain-dropdown-item ${activeModel === m.name ? 'active' : ''}`}
-                    onClick={() => {
-                      onSelectModel(m.name)
-                      setModelDropdownOpen(false)
-                    }}
-                  >
-                    <div className="brain-dropdown-item-info">
-                      <span className="brain-dropdown-item-title">{m.name}</span>
-                      <span className="brain-dropdown-item-sub">{m.tag}</span>
-                    </div>
-                    {activeModel === m.name && <CheckIcon size={16} className="brain-check-icon" />}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
         </div>
       </div>
 

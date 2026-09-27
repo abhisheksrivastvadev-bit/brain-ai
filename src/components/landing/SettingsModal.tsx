@@ -104,8 +104,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   onChange={(e) => setFormState({ ...formState, model: e.target.value })}
                   className="brain-setting-select"
                 >
-                  <option value="Nexora Ultra 3.5">Nexora Ultra 3.5 (Recommended)</option>
-                  <option value="Nexora Reasoning Pro">Nexora Reasoning Pro</option>
+                  <option value="Brain AI Reasoning Pro">Brain AI Reasoning Pro</option>
                   <option value="Claude 3.5 Sonnet">Claude 3.5 Sonnet</option>
                   <option value="GPT-4o Omni">GPT-4o Omni</option>
                 </select>
@@ -119,7 +118,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   value={formState.systemPrompt}
                   onChange={(e) => setFormState({ ...formState, systemPrompt: e.target.value })}
                   className="brain-setting-textarea"
-                  placeholder="You are Nexora, a world-class cognitive AI..."
+                  placeholder="You are Brain AI, a world-class cognitive assistant..."
                 />
               </div>
 
