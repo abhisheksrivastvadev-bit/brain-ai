@@ -21,6 +21,7 @@ export const THEME_MODES = {
 
 export const STORAGE_KEYS = {
   THEME: 'brain_ai_theme',
+  SETTINGS: 'brain_ai_settings',
 } as const
 
 export type ThemeMode = (typeof THEME_MODES)[keyof typeof THEME_MODES]

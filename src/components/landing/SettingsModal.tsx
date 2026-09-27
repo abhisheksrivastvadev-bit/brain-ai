@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   SettingsIcon,
   CloseIcon,
@@ -26,6 +26,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [formState, setFormState] = useState<AppSettings>({ ...settings })
   const [showApiKey, setShowApiKey] = useState(false)
   const [savedFeedback, setSavedFeedback] = useState(false)
+
+  // Keep form state in sync with settings when modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      setFormState({ ...settings })
+    }
+  }, [isOpen, settings])
 
   if (!isOpen) return null
 

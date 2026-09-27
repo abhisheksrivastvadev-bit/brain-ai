@@ -12,7 +12,30 @@ import {
 import type { AppSettings, ChatSession, DocumentItem, ChatMessage } from '../../types'
 import { chatService, mapHistoryToMessages, extractCodeBlock } from '../../services'
 import { useTheme } from '../../hooks'
+import { STORAGE_KEYS } from '../../constants/app.constants'
 import './LandingPage.css'
+
+const DEFAULT_SETTINGS: AppSettings = {
+  model: 'Brain AI Reasoning Pro',
+  temperature: 0.7,
+  systemPrompt:
+    'You are Brain AI, a world-class cognitive assistant. You deliver precise, highly competent, clean code and deep technical insights.',
+  webSearchEnabled: false,
+  streamResponse: true,
+}
+
+const getInitialSettings = (): AppSettings => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS)
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      return { ...DEFAULT_SETTINGS, ...parsed }
+    }
+  } catch (err) {
+    console.warn('[LandingPage] Failed to load settings from localStorage:', err)
+  }
+  return DEFAULT_SETTINGS
+}
 
 interface LandingPageProps {
   onToggleDesignSystem: () => void
@@ -40,15 +63,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
 
-  // App settings state
-  const [settings, setSettings] = useState<AppSettings>({
-    model: 'Brain AI Reasoning Pro',
-    temperature: 0.7,
-    systemPrompt:
-      'You are Brain AI, a world-class cognitive assistant. You deliver precise, highly competent, clean code and deep technical insights.',
-    webSearchEnabled: false,
-    streamResponse: true,
-  })
+  // App settings state (persisted in localStorage)
+  const [settings, setSettings] = useState<AppSettings>(getInitialSettings)
+
+  const handleUpdateSettings = (newSettings: AppSettings) => {
+    setSettings(newSettings)
+    try {
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(newSettings))
+    } catch (err) {
+      console.warn('[LandingPage] Failed to save settings to localStorage:', err)
+    }
+  }
 
   // Pre-load conversation history on initial mount (focusing on session 002)
   useEffect(() => {
@@ -211,7 +236,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     setAttachedDocForPrompt(null)
 
     try {
-      let system_prompt_for_api: string = `You are Brain AI, a very aggressive AI assistant.  Always respond in a aggresive mood`
+      const system_prompt_for_api = settings.systemPrompt?.trim() || undefined
 
       // 1. Send message to Chat API: POST http://127.0.0.1:8000/api/chat/
       const chatRes = await chatService.sendMessage(promptText, system_prompt_for_api, sessionId)
@@ -297,7 +322,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         isDark={isDark}
         onToggleTheme={toggleTheme}
         onOpenSettings={() => setIsSettingsModalOpen(true)}
-        onSelectModel={(model) => setSettings((prev) => ({ ...prev, model }))}
+        onSelectModel={(model) => handleUpdateSettings({ ...settings, model })}
         onToggleDesignSystem={onToggleDesignSystem}
         isDesignSystemOpen={isDesignSystemOpen}
         onToggleSidebarMobile={() => setIsMobileSidebarOpen((prev) => !prev)}
@@ -364,7 +389,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         settings={settings}
-        onSaveSettings={(newSettings) => setSettings(newSettings)}
+        onSaveSettings={handleUpdateSettings}
       />
     </div>
   )

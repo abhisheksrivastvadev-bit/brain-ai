@@ -139,6 +139,7 @@ export const chatService = {
    */
   async askChatAndSync(
     message: string,
+    system_prompt?: string,
     sessionId: string = '002'
   ): Promise<{
     chatResponse: ChatPostResponse
@@ -146,7 +147,7 @@ export const chatService = {
     messages: ChatMessage[]
   }> {
     // 1. Post message to chat API
-    const chatResponse = await this.sendMessage(message, sessionId)
+    const chatResponse = await this.sendMessage(message, system_prompt, sessionId)
 
     // 2. Fetch updated history from history API
     const historyResponse = await this.getChatHistory(sessionId)
