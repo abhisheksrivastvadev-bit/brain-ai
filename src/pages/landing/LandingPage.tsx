@@ -1,16 +1,16 @@
 import React, { useState } from 'react'
-import { TopNavbar } from '../components/landing/TopNavbar'
-import { Sidebar } from '../components/landing/Sidebar'
-import { HeroPrompt } from '../components/landing/HeroPrompt'
-import { ChatConversation } from '../components/landing/ChatConversation'
-import { DocumentModal } from '../components/landing/DocumentModal'
-import { UploadModal } from '../components/landing/UploadModal'
-import { SettingsModal } from '../components/landing/SettingsModal'
+import { TopNavbar } from '../../components/landing/TopNavbar'
+import { Sidebar } from '../../components/landing/Sidebar'
+import { HeroPrompt } from '../../components/landing/HeroPrompt'
+import { ChatConversation } from '../../components/landing/ChatConversation'
+import { DocumentModal } from '../../components/landing/DocumentModal'
+import { UploadModal } from '../../components/landing/UploadModal'
+import { SettingsModal } from '../../components/landing/SettingsModal'
 import {
   CURRENT_USER,
-} from '../data/mockData'
-import type { AppSettings, ChatSession, DocumentItem } from '../types'
-import { useTheme } from '../hooks'
+} from '../../data/mockData'
+import type { AppSettings, ChatSession, DocumentItem } from '../../types'
+import { useTheme } from '../../hooks'
 import './LandingPage.css'
 
 interface LandingPageProps {

@@ -1,3 +1,3 @@
-export { LandingPage } from './LandingPage'
-export { HomePage } from './HomePage'
-export { default } from './LandingPage'
+export { LandingPage } from './landing'
+export { HomePage } from './home'
+export { default } from './landing'

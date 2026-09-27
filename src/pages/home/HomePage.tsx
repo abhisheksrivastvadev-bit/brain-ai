@@ -5,7 +5,7 @@ import {
   Loader,
   Card,
   Badge,
-} from '../components/ui'
+} from '../../components/ui'
 import {
   SparklesIcon,
   SearchIcon,
@@ -17,9 +17,9 @@ import {
   UserIcon,
   RefreshIcon,
   CheckIcon,
-} from '../components/icons'
-import { useTheme } from '../hooks'
-import { palette } from '../themes/colors'
+} from '../../components/icons'
+import { useTheme } from '../../hooks'
+import { palette } from '../../themes/colors'
 import './HomePage.css'
 
 export const HomePage: React.FC = () => {

@@ -27,7 +27,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   isDark,
   onToggleTheme,
   onOpenSettings,
-  onSelectModel: _onSelectModel,
   onToggleDesignSystem,
   isDesignSystemOpen,
   onToggleSidebarMobile,

@@ -1,10 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import {
   SendIcon,
-  PaperclipIcon,
-  MicIcon,
   SparklesIcon,
-  SearchIcon,
   FileTextIcon,
   CloseIcon,
 } from '../icons'
@@ -15,7 +12,7 @@ interface HeroPromptProps {
   onSendMessage: (text: string, attachedDoc?: string) => void
   attachedDoc: DocumentItem | null
   onRemoveAttachedDoc: () => void
-  onOpenUploadModal: () => void
+  onOpenUploadModal?: () => void
   activeModel?: string
 }
 
@@ -23,12 +20,8 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
   onSendMessage,
   attachedDoc,
   onRemoveAttachedDoc,
-  onOpenUploadModal,
-  activeModel = 'Brain AI Reasoning Pro',
 }) => {
   const [inputText, setInputText] = useState('')
-  const [isWebSearchActive, setIsWebSearchActive] = useState(false)
-  const [isRecording, setIsRecording] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Auto resize textarea
@@ -50,19 +43,6 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSubmit()
-    }
-  }
-
-  const toggleRecording = () => {
-    if (isRecording) {
-      setIsRecording(false)
-    } else {
-      setIsRecording(true)
-      // Simulate speech-to-text preview
-      setTimeout(() => {
-        setInputText((prev) => (prev ? `${prev} Explain Python GIL` : 'Explain Python GIL and multi-threading'))
-        setIsRecording(false)
-      }, 1800)
     }
   }
 
