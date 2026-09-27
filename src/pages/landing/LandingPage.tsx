@@ -56,7 +56,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   // Documents state
   const [documents, setDocuments] = useState<DocumentItem[]>([])
   const [selectedDocForModal, setSelectedDocForModal] = useState<DocumentItem | null>(null)
-  const [attachedDocForPrompt, setAttachedDocForPrompt] = useState<DocumentItem | null>(null)
 
   // Modals state
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
@@ -138,7 +137,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   // Handler: New Chat (resets to empty landing prototype view)
   const handleNewChat = () => {
     setActiveChatId(null)
-    setAttachedDocForPrompt(null)
   }
 
   // Handler: Select existing chat
@@ -187,8 +185,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   // Executes:
   // 1. chat API: POST http://127.0.0.1:8000/api/chat/
   // 2. history API: GET http://127.0.0.1:8000/api/history/?session_id={sessionId}
-  const handleSendMessage = async (text: string, attachedDocName?: string) => {
-    if (!text.trim() && !attachedDocName) return
+  const handleSendMessage = async (text: string) => {
+    if (!text.trim()) return
     if (isSending) return
 
     const sessionId = activeChatId || '002'
@@ -200,7 +198,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       sender: 'user',
       content: promptText,
       timestamp: now,
-      attachment: attachedDocName,
     }
 
     // Optimistically show user message and set active chat
@@ -233,7 +230,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     }
 
     setIsSending(true)
-    setAttachedDocForPrompt(null)
 
     try {
       const system_prompt_for_api = settings.systemPrompt?.trim() || undefined
@@ -303,15 +299,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   }
 
   // Handler: "Chat with this document" from Document Modal
-  const handleChatWithDocument = (doc: DocumentItem) => {
-    setAttachedDocForPrompt(doc)
-    setActiveChatId(null) // Return to hero landing with document attached
+  const handleChatWithDocument = () => {
+    setActiveChatId(null)
   }
 
   // Handler: Add newly uploaded document to Documents list
   const handleUploadSuccess = (newDoc: DocumentItem) => {
     setDocuments((prev) => [newDoc, ...prev])
-    setAttachedDocForPrompt(newDoc)
   }
 
   return (
@@ -353,18 +347,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               currentUser={CURRENT_USER}
               onSendMessage={handleSendMessage}
               onBackToNewChat={handleNewChat}
-              onOpenUploadModal={() => setIsUploadModalOpen(true)}
-              attachedDoc={attachedDocForPrompt}
-              onRemoveAttachedDoc={() => setAttachedDocForPrompt(null)}
               isLoading={isSending}
               onRefreshHistory={handleRefreshHistory}
             />
           ) : (
             <HeroPrompt
               onSendMessage={handleSendMessage}
-              attachedDoc={attachedDocForPrompt}
-              onRemoveAttachedDoc={() => setAttachedDocForPrompt(null)}
-              onOpenUploadModal={() => setIsUploadModalOpen(true)}
               activeModel={settings.model}
               isLoading={isSending}
             />

@@ -2,26 +2,18 @@ import React, { useState, useRef, useEffect } from 'react'
 import {
   SendIcon,
   SparklesIcon,
-  FileTextIcon,
-  CloseIcon,
   RefreshIcon,
 } from '../icons'
-import type { DocumentItem } from '../../types'
 import './HeroPrompt.css'
 
 interface HeroPromptProps {
-  onSendMessage: (text: string, attachedDoc?: string) => void
-  attachedDoc: DocumentItem | null
-  onRemoveAttachedDoc: () => void
-  onOpenUploadModal?: () => void
+  onSendMessage: (text: string) => void
   activeModel?: string
   isLoading?: boolean
 }
 
 export const HeroPrompt: React.FC<HeroPromptProps> = ({
   onSendMessage,
-  attachedDoc,
-  onRemoveAttachedDoc,
   isLoading = false,
 }) => {
   const [inputText, setInputText] = useState('')
@@ -37,8 +29,8 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault()
-    if ((!inputText.trim() && !attachedDoc) || isLoading) return
-    onSendMessage(inputText.trim(), attachedDoc?.name)
+    if (!inputText.trim() || isLoading) return
+    onSendMessage(inputText.trim())
     setInputText('')
   }
 
@@ -76,23 +68,6 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
           onSubmit={handleSubmit}
         >
           <div className="brain-prompt-box">
-            {/* Attached document tag if selected */}
-            {attachedDoc && (
-              <div className="brain-attached-doc-chip" id="attached-doc-chip">
-                <FileTextIcon size={14} className="brain-attached-doc-icon" />
-                <span className="brain-attached-doc-name">{attachedDoc.name}</span>
-                <span className="brain-attached-doc-size">({attachedDoc.size})</span>
-                <button
-                  type="button"
-                  className="brain-attached-doc-remove"
-                  onClick={onRemoveAttachedDoc}
-                  aria-label="Remove attached document"
-                >
-                  <CloseIcon size={12} />
-                </button>
-              </div>
-            )}
-
             <div className="brain-prompt-input-row">
               <textarea
                 ref={textareaRef}
@@ -118,7 +93,7 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
                   type="submit"
                   className="brain-prompt-send-btn"
                   id="btn-prompt-send"
-                  disabled={(!inputText.trim() && !attachedDoc) || isLoading}
+                  disabled={!inputText.trim() || isLoading}
                   aria-label="Send message"
                 >
                   {isLoading ? (

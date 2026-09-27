@@ -31,7 +31,6 @@ export interface ChatMessage {
   }
   reasoning?: string
   tags?: string[]
-  attachment?: string
 }
 
 export interface ChatSession {

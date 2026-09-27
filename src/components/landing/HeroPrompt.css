@@ -143,47 +143,6 @@
   box-shadow: 0 16px 40px -8px rgba(99, 102, 241, 0.25), 0 0 0 2px rgba(99, 102, 241, 0.35);
 }
 
-/* Attached doc chip inside prompt */
-.brain-attached-doc-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(99, 102, 241, 0.15);
-  border: 1px solid rgba(99, 102, 241, 0.35);
-  padding: 4px 10px;
-  border-radius: var(--radius-md);
-  font-size: 0.78rem;
-  align-self: flex-start;
-  color: var(--text-primary);
-}
-
-.brain-attached-doc-icon {
-  color: var(--color-accent-400);
-}
-
-.brain-attached-doc-name {
-  font-weight: 600;
-}
-
-.brain-attached-doc-size {
-  color: var(--text-muted);
-}
-
-.brain-attached-doc-remove {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 2px;
-  display: flex;
-  align-items: center;
-  border-radius: 50%;
-}
-
-.brain-attached-doc-remove:hover {
-  color: var(--color-error);
-  background: var(--color-error-bg);
-}
 
 .brain-prompt-input-row {
   width: 100%;

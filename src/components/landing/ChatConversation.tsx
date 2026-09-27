@@ -1,27 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react'
 import {
   SendIcon,
-  PaperclipIcon,
   BrainIcon,
   CopyIcon,
   CheckIcon,
   SparklesIcon,
-  FileTextIcon,
-  CloseIcon,
   ArrowRightIcon,
   RefreshIcon,
 } from '../icons'
-import type { ChatSession, DocumentItem, User } from '../../types'
+import type { ChatSession, User } from '../../types'
 import './ChatConversation.css'
 
 interface ChatConversationProps {
   chat: ChatSession
   currentUser: User
-  onSendMessage: (text: string, attachedDoc?: string) => void
+  onSendMessage: (text: string) => void
   onBackToNewChat: () => void
-  onOpenUploadModal: () => void
-  attachedDoc: DocumentItem | null
-  onRemoveAttachedDoc: () => void
   isLoading?: boolean
   onRefreshHistory?: () => void
 }
@@ -31,9 +25,6 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
   currentUser,
   onSendMessage,
   onBackToNewChat,
-  onOpenUploadModal,
-  attachedDoc,
-  onRemoveAttachedDoc,
   isLoading = false,
   onRefreshHistory,
 }) => {
@@ -76,8 +67,8 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault()
-    if ((!inputText.trim() && !attachedDoc) || isLoading) return
-    onSendMessage(inputText.trim(), attachedDoc?.name)
+    if (!inputText.trim() || isLoading) return
+    onSendMessage(inputText.trim())
     setInputText('')
   }
 
@@ -166,13 +157,6 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
                   <span className="brain-msg-time">{msg.timestamp}</span>
                 </div>
 
-                {/* Attachment Badge */}
-                {msg.attachment && (
-                  <div className="brain-msg-attachment-badge">
-                    <FileTextIcon size={13} />
-                    <span>Context: {msg.attachment}</span>
-                  </div>
-                )}
 
                 {/* Optional Reasoning Collapser */}
                 {msg.reasoning && (
@@ -298,32 +282,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
       {/* Floating Bottom Input Bar */}
       <footer className="brain-chat-footer">
         <form className="brain-chat-input-container" onSubmit={handleSubmit}>
-          {attachedDoc && (
-            <div className="brain-attached-doc-chip">
-              <FileTextIcon size={14} className="brain-attached-doc-icon" />
-              <span className="brain-attached-doc-name">{attachedDoc.name}</span>
-              <button
-                type="button"
-                className="brain-attached-doc-remove"
-                onClick={onRemoveAttachedDoc}
-                aria-label="Remove attached document"
-              >
-                <CloseIcon size={12} />
-              </button>
-            </div>
-          )}
-
           <div className="brain-chat-input-row">
-            {/* <button
-              type="button"
-              className="brain-chat-tool-btn"
-              onClick={onOpenUploadModal}
-              title="Attach Document"
-              disabled={isLoading}
-            >
-              <PaperclipIcon size={17} />
-            </button> */}
-
             <textarea
               ref={textareaRef}
               rows={1}
@@ -340,7 +299,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
               type="submit"
               className="brain-chat-send-btn"
               id="btn-chat-send"
-              disabled={(!inputText.trim() && !attachedDoc) || isLoading}
+              disabled={!inputText.trim() || isLoading}
               aria-label="Send message"
             >
               {isLoading ? (

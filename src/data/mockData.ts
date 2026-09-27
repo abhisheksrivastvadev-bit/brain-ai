@@ -199,11 +199,10 @@ export const QUICK_PROMPTS = [
     category: 'AI Agents',
   },
   {
-    title: 'Query Resume.pdf for core skills',
-    subtitle: 'Contextual RAG extraction from uploaded document',
-    prompt: 'Based on the attached Resume.pdf, what are Abhishek’s core technical competencies and leadership achievements?',
+    title: 'Cognitive reasoning & skills extraction',
+    subtitle: 'Contextual analysis and technical capabilities',
+    prompt: 'What are Abhishek’s core technical competencies and engineering achievements?',
     icon: 'doc',
     category: 'Documents',
-    attachDoc: 'Resume.pdf',
   },
 ]

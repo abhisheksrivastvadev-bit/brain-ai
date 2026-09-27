@@ -175,18 +175,6 @@
   color: var(--text-muted);
 }
 
-.brain-msg-attachment-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  font-size: 0.74rem;
-  color: var(--color-primary-400);
-  align-self: flex-start;
-}
 
 /* Reasoning Process */
 .brain-msg-reasoning-box {
