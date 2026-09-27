@@ -1,0 +1,206 @@
+/* Brain AI - Input Component Styles */
+
+.brain-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  text-align: left;
+}
+
+.brain-input-wrapper--full {
+  width: 100%;
+}
+
+/* Label */
+.brain-input-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary, #f8fafc);
+  letter-spacing: 0.01em;
+}
+
+.brain-input-required {
+  color: var(--color-error, #ef4444);
+}
+
+/* Input Container (holds left icon, input element, clear button, right icon) */
+.brain-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--bg-glass-input, rgba(30, 41, 59, 0.6));
+  border: 1px solid var(--border-default, #334155);
+  transition: all var(--transition-fast, 150ms ease);
+  box-sizing: border-box;
+}
+
+/* Variants */
+.brain-input-container--outlined {
+  border-radius: var(--radius-md, 8px);
+}
+
+.brain-input-container--filled {
+  border-radius: var(--radius-md, 8px);
+  background: var(--bg-surface-elevated, #1e293b);
+  border-color: transparent;
+}
+
+.brain-input-container--underlined {
+  border-radius: 0;
+  background: transparent;
+  border-width: 0 0 2px 0;
+  border-color: var(--border-default, #334155);
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Focus States */
+.brain-input-container:focus-within {
+  border-color: var(--color-primary-500, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+.brain-input-container--underlined:focus-within {
+  box-shadow: 0 2px 0 0 var(--color-primary-500, #6366f1);
+}
+
+/* Error States */
+.brain-input-container--error,
+.brain-input-container--error:focus-within {
+  border-color: var(--color-error, #ef4444) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
+}
+
+.brain-input-container--underlined.brain-input-container--error:focus-within {
+  box-shadow: 0 2px 0 0 var(--color-error, #ef4444) !important;
+}
+
+/* Disabled State */
+.brain-input-container--disabled {
+  opacity: 0.55;
+  background: var(--bg-surface-subtle, #141d33);
+  cursor: not-allowed;
+}
+
+/* Sizes */
+.brain-input-container--sm {
+  height: 34px;
+  padding: 0 10px;
+  font-size: 0.8125rem;
+}
+
+.brain-input-container--md {
+  height: 42px;
+  padding: 0 14px;
+  font-size: 0.875rem;
+}
+
+.brain-input-container--lg {
+  height: 50px;
+  padding: 0 16px;
+  font-size: 1rem;
+}
+
+/* The actual <input> element */
+.brain-input {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--text-primary, #f8fafc);
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.brain-input::placeholder {
+  color: var(--text-muted, #64748b);
+  opacity: 1;
+}
+
+.brain-input:disabled {
+  cursor: not-allowed;
+}
+
+/* Input Icons & Actions */
+.brain-input-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #64748b);
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.brain-input-container:focus-within .brain-input-icon {
+  color: var(--color-primary-400, #818cf8);
+}
+
+.brain-input-icon--left {
+  margin-right: 10px;
+}
+
+.brain-input-icon--right {
+  margin-left: 10px;
+}
+
+.brain-input-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+/* Action Button (e.g. password toggle or clear) */
+.brain-input-action-btn {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #64748b);
+  border-radius: var(--radius-xs, 4px);
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.brain-input-action-btn:hover {
+  color: var(--text-primary, #ffffff);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.brain-input-action-btn:focus-visible {
+  outline: 2px solid var(--color-primary-400, #818cf8);
+}
+
+/* Helper Text & Error Message */
+.brain-input-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.brain-input-helper {
+  color: var(--text-secondary, #94a3b8);
+}
+
+.brain-input-error-msg {
+  color: var(--color-error, #ef4444);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

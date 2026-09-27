@@ -1,0 +1,405 @@
+.brain-chat-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px);
+  background: var(--bg-app);
+  position: relative;
+  overflow: hidden;
+}
+
+.brain-chat-header {
+  height: 56px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+.brain-chat-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brain-chat-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--color-primary-400);
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.brain-chat-back-btn:hover {
+  background: var(--border-subtle);
+  border-color: var(--color-primary-500);
+  color: var(--text-primary);
+}
+
+.brain-chat-header-sep {
+  color: var(--text-muted);
+}
+
+.brain-chat-header-title-box {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.brain-chat-header-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.brain-chat-header-desc {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.brain-chat-model-tag {
+  font-size: 0.74rem;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  background: var(--bg-surface-elevated);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Messages */
+.brain-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 24px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.brain-msg-row {
+  display: flex;
+  gap: 14px;
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.brain-msg-row--user {
+  flex-direction: row-reverse;
+}
+
+.brain-msg-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.brain-msg-row--user .brain-msg-avatar {
+  background: linear-gradient(135deg, #6366f1, #22d3ee);
+}
+
+.brain-msg-ai-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: var(--gradient-cyber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.35);
+}
+
+.brain-msg-bubble {
+  max-width: calc(100% - 50px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.brain-msg-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.76rem;
+}
+
+.brain-msg-row--user .brain-msg-meta {
+  justify-content: flex-end;
+}
+
+.brain-msg-sender {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.brain-msg-time {
+  color: var(--text-muted);
+}
+
+.brain-msg-attachment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.74rem;
+  color: var(--color-primary-400);
+  align-self: flex-start;
+}
+
+/* Reasoning Process */
+.brain-msg-reasoning-box {
+  background: var(--bg-surface);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 0.78rem;
+}
+
+.brain-msg-reasoning-toggle {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0;
+  font-size: 0.78rem;
+}
+
+.brain-msg-reasoning-toggle:hover {
+  color: var(--color-primary-400);
+}
+
+.brain-reasoning-arrow {
+  transition: transform var(--transition-fast);
+}
+
+.brain-reasoning-arrow.open {
+  transform: rotate(90deg);
+}
+
+.brain-msg-reasoning-content {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+}
+
+/* Text Styling */
+.brain-msg-text {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.brain-msg-row--user .brain-msg-text {
+  background: var(--color-primary-600);
+  color: #ffffff;
+  padding: 12px 18px;
+  border-radius: var(--radius-lg) 0 var(--radius-lg) var(--radius-lg);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+}
+
+.brain-msg-row--assistant .brain-msg-text {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  padding: 16px 20px;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.brain-msg-h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 4px;
+}
+
+.brain-msg-ul,
+.brain-msg-ol {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.brain-msg-text code {
+  background: rgba(0, 0, 0, 0.25);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.86rem;
+  font-family: var(--font-mono);
+  color: var(--color-accent-400);
+}
+
+/* Code Snippets */
+.brain-code-block {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.brain-code-header {
+  background: #161b22;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  border-bottom: 1px solid #30363d;
+}
+
+.brain-code-title {
+  font-size: 0.74rem;
+  font-family: var(--font-mono);
+  color: #8b949e;
+}
+
+.brain-code-copy-btn {
+  background: transparent;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.brain-code-copy-btn:hover {
+  background: #21262d;
+  border-color: #8b949e;
+}
+
+.brain-copy-check {
+  color: #22c55e;
+}
+
+.brain-code-pre {
+  margin: 0;
+  padding: 14px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #e6edf3;
+}
+
+/* Bottom Input Bar */
+.brain-chat-footer {
+  padding: 16px 24px 20px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.brain-chat-input-container {
+  max-width: 860px;
+  margin: 0 auto;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: border-color var(--transition-fast);
+}
+
+.brain-chat-input-container:focus-within {
+  border-color: var(--color-primary-500);
+}
+
+.brain-chat-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.brain-chat-tool-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  transition: all var(--transition-fast);
+}
+
+.brain-chat-tool-btn:hover {
+  color: var(--text-primary);
+  background: var(--border-subtle);
+}
+
+.brain-chat-textarea {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  min-height: 24px;
+  max-height: 160px;
+}
+
+.brain-chat-send-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: var(--gradient-primary);
+  border: none;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.brain-chat-send-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.brain-chat-send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

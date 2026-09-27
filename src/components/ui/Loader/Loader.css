@@ -1,0 +1,198 @@
+/* Brain AI - Loader Component Styles */
+
+.brain-loader-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-3, 12px);
+  color: var(--color-primary-500, #6366f1);
+}
+
+.brain-loader-container--direction-bottom {
+  flex-direction: column;
+}
+
+.brain-loader-container--direction-right {
+  flex-direction: row;
+}
+
+/* Overlay Mode */
+.brain-loader-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-glass, rgba(15, 23, 42, 0.7));
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 100;
+  border-radius: inherit;
+}
+
+.brain-loader-overlay.brain-loader-fullscreen {
+  position: fixed;
+  z-index: 9999;
+}
+
+/* Text label */
+.brain-loader-text {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary, #94a3b8);
+  letter-spacing: 0.02em;
+}
+
+/* --- Variant 1: Spinner --- */
+.brain-loader-spinner {
+  display: inline-block;
+  animation: brain-spin 0.8s linear infinite;
+}
+
+.brain-loader-spinner-circle {
+  stroke-linecap: round;
+  transition: stroke 0.2s ease;
+}
+
+@keyframes brain-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Variant 2: Bouncing Dots --- */
+.brain-loader-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.brain-loader-dot {
+  width: 8px;
+  height: 8px;
+  background-color: currentColor;
+  border-radius: 50%;
+  animation: brain-bounce 1.4s infinite ease-in-out both;
+}
+
+.brain-loader-dots--xs .brain-loader-dot { width: 4px; height: 4px; }
+.brain-loader-dots--sm .brain-loader-dot { width: 6px; height: 6px; }
+.brain-loader-dots--md .brain-loader-dot { width: 8px; height: 8px; }
+.brain-loader-dots--lg .brain-loader-dot { width: 12px; height: 12px; }
+.brain-loader-dots--xl .brain-loader-dot { width: 16px; height: 16px; }
+
+.brain-loader-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.brain-loader-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes brain-bounce {
+  0%, 80%, 100% {
+    transform: scale(0.4);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* --- Variant 3: Pulse Ring --- */
+.brain-loader-pulse {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brain-loader-pulse-core {
+  width: 50%;
+  height: 50%;
+  background: currentColor;
+  border-radius: 50%;
+  box-shadow: 0 0 12px currentColor;
+}
+
+.brain-loader-pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  animation: brain-pulse-expand 1.6s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+
+@keyframes brain-pulse-expand {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/* --- Variant 4: Bars / Wave --- */
+.brain-loader-bars {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.brain-loader-bar {
+  background-color: currentColor;
+  border-radius: 4px;
+  animation: brain-bar-wave 1.2s ease-in-out infinite;
+}
+
+.brain-loader-bars--xs .brain-loader-bar { width: 2px; height: 10px; }
+.brain-loader-bars--sm .brain-loader-bar { width: 3px; height: 14px; }
+.brain-loader-bars--md .brain-loader-bar { width: 4px; height: 20px; }
+.brain-loader-bars--lg .brain-loader-bar { width: 5px; height: 28px; }
+.brain-loader-bars--xl .brain-loader-bar { width: 6px; height: 36px; }
+
+.brain-loader-bar:nth-child(1) { animation-delay: -0.45s; }
+.brain-loader-bar:nth-child(2) { animation-delay: -0.3s; }
+.brain-loader-bar:nth-child(3) { animation-delay: -0.15s; }
+.brain-loader-bar:nth-child(4) { animation-delay: 0s; }
+
+@keyframes brain-bar-wave {
+  0%, 40%, 100% {
+    transform: scaleY(0.4);
+    opacity: 0.5;
+  }
+  20% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* --- Variant 5: Skeleton Shimmer --- */
+.brain-loader-skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface-elevated, #1e293b) 25%,
+    var(--border-hover, #475569) 50%,
+    var(--bg-surface-elevated, #1e293b) 75%
+  );
+  background-size: 200% 100%;
+  animation: brain-shimmer 1.8s infinite linear;
+  border-radius: var(--radius-md, 8px);
+}
+
+@keyframes brain-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

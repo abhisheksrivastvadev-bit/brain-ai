@@ -1,0 +1,71 @@
+/* Brain AI - Badge Component Styles */
+
+.brain-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-weight: 500;
+  border-radius: var(--radius-full, 9999px);
+  white-space: nowrap;
+  vertical-align: middle;
+  border: 1px solid transparent;
+  transition: all var(--transition-fast, 150ms ease);
+}
+
+.brain-badge--sm {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  height: 20px;
+}
+
+.brain-badge--md {
+  font-size: 0.8125rem;
+  padding: 3px 10px;
+  height: 24px;
+}
+
+/* Variants */
+.brain-badge--primary {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--color-primary-400, #818cf8);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.brain-badge--accent {
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--color-accent-400, #22d3ee);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.brain-badge--success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.brain-badge--warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.brain-badge--error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.brain-badge--neutral {
+  background: var(--bg-surface-elevated, #1e293b);
+  color: var(--text-secondary, #94a3b8);
+  border-color: var(--border-default, #334155);
+}
+
+.brain-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}

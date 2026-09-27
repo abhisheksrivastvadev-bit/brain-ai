@@ -1,0 +1,64 @@
+/* Brain AI - Card Component Styles */
+
+.brain-card {
+  position: relative;
+  background: var(--bg-surface, #0f172a);
+  border: 1px solid var(--border-subtle, #1e293b);
+  border-radius: var(--radius-xl, 16px);
+  padding: var(--spacing-6, 24px);
+  transition: all var(--transition-normal, 250ms ease);
+  box-sizing: border-box;
+}
+
+.brain-card--glass {
+  background: var(--bg-glass, rgba(15, 23, 42, 0.75));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.brain-card--hoverable:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-hover, #475569);
+  box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.3));
+}
+
+.brain-card--glow:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: var(--shadow-glow, 0 0 25px rgba(99, 102, 241, 0.25));
+}
+
+.brain-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-4, 16px);
+}
+
+.brain-card__title {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary, #f8fafc);
+  margin: 0;
+}
+
+.brain-card__description {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #94a3b8);
+  margin: 4px 0 0;
+}
+
+.brain-card__body {
+  position: relative;
+}
+
+.brain-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-3, 12px);
+  margin-top: var(--spacing-6, 24px);
+  padding-top: var(--spacing-4, 16px);
+  border-top: 1px solid var(--border-subtle, #1e293b);
+}
