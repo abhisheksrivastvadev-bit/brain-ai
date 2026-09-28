@@ -29,6 +29,8 @@ export interface ChatMessage {
     code: string
     title?: string
   }
+  imageUrl?: string
+  images?: string[]
   reasoning?: string
   tags?: string[]
 }
@@ -66,6 +68,9 @@ export interface AppSettings {
 export interface ChatHistoryItem {
   role: 'user' | 'assistant'
   content: string
+  image_url?: string
+  imageUrl?: string
+  images?: string[]
 }
 
 export interface ChatHistoryResponse {
@@ -84,5 +89,8 @@ export interface ChatPostRequest {
 
 export interface ChatPostResponse {
   message: string
+  image_url?: string
+  imageUrl?: string
+  images?: string[]
 }
 

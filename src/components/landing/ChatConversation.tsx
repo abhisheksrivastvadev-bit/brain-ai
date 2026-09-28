@@ -7,6 +7,10 @@ import {
   SparklesIcon,
   ArrowRightIcon,
   RefreshIcon,
+  ImageIcon,
+  DownloadIcon,
+  MaximizeIcon,
+  CloseIcon,
 } from '../icons'
 import type { ChatSession, User } from '../../types'
 import './ChatConversation.css'
@@ -30,9 +34,26 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
 }) => {
   const [inputText, setInputText] = useState('')
   const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null)
+  const [copiedImgId, setCopiedImgId] = useState<string | null>(null)
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null)
   const [expandedReasoning, setExpandedReasoning] = useState<Record<string, boolean>>({})
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Close lightbox on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLightboxImage(null)
+      }
+    }
+    if (lightboxImage) {
+      window.addEventListener('keydown', handleKeyDown)
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [lightboxImage])
 
   // Scroll only the chat messages container to bottom (avoids scrolling window/body)
   useEffect(() => {
@@ -56,6 +77,21 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
     navigator.clipboard?.writeText(code)
     setCopiedSnippetId(id)
     setTimeout(() => setCopiedSnippetId(null), 2000)
+  }
+
+  const handleCopyImageUrl = (url: string, id: string) => {
+    navigator.clipboard?.writeText(url)
+    setCopiedImgId(id)
+    setTimeout(() => setCopiedImgId(null), 2000)
+  }
+
+  const handleDownloadImage = (url: string, filename = 'brain-ai-visual.jpg') => {
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   const toggleReasoning = (msgId: string) => {
@@ -182,6 +218,32 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
                 {/* Formatted Text Content */}
                 <div className="brain-msg-text">
                   {msg.content.split('\n\n').map((paragraph, pIdx) => {
+                    // Check if paragraph is markdown image: ![alt](url)
+                    const mdImgMatch = paragraph.match(/^!\[([^\]]*)\]\(([^)]+)\)$/)
+                    if (mdImgMatch) {
+                      const alt = mdImgMatch[1] || 'Generated Visual'
+                      const url = mdImgMatch[2]
+                      return (
+                        <div key={pIdx} className="brain-inline-image-box">
+                          <div
+                            className="brain-image-preview-wrapper"
+                            onClick={() => setLightboxImage(url)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => e.key === 'Enter' && setLightboxImage(url)}
+                          >
+                            <img src={url} alt={alt} className="brain-msg-image" loading="lazy" />
+                            <div className="brain-image-hover-overlay">
+                              <span className="brain-image-overlay-text">
+                                <MaximizeIcon size={14} /> Click to expand
+                              </span>
+                            </div>
+                          </div>
+                          {alt && <span className="brain-image-caption">{alt}</span>}
+                        </div>
+                      )
+                    }
+
                     if (paragraph.startsWith('### ')) {
                       return <h4 key={pIdx} className="brain-msg-h4">{paragraph.replace('### ', '')}</h4>
                     }
@@ -244,6 +306,78 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
                     <pre className="brain-code-pre">
                       <code>{msg.codeSnippet.code}</code>
                     </pre>
+                  </div>
+                )}
+
+                {/* AI Generated Images display */}
+                {((msg.images && msg.images.length > 0) || msg.imageUrl) && (
+                  <div className="brain-msg-images-grid">
+                    {(msg.images && msg.images.length > 0 ? msg.images : (msg.imageUrl ? [msg.imageUrl] : [])).map((imgUrl, imgIdx) => {
+                      const imgKey = `${msg.id}_img_${imgIdx}`
+                      return (
+                        <div key={imgKey} className="brain-msg-image-card">
+                          <div className="brain-image-card-header">
+                            <div className="brain-image-card-badge">
+                              <SparklesIcon size={13} className="brain-image-badge-sparkle" />
+                              <span>AI Generated Image</span>
+                            </div>
+                            <div className="brain-image-card-actions">
+                              <button
+                                type="button"
+                                className="brain-img-action-btn"
+                                onClick={() => setLightboxImage(imgUrl)}
+                                title="Expand image full size"
+                                aria-label="Expand image"
+                              >
+                                <MaximizeIcon size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                className="brain-img-action-btn"
+                                onClick={() => handleDownloadImage(imgUrl, `brain-ai-${msg.id.slice(-6)}-${imgIdx + 1}.jpg`)}
+                                title="Download image"
+                                aria-label="Download image"
+                              >
+                                <DownloadIcon size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                className="brain-img-action-btn"
+                                onClick={() => handleCopyImageUrl(imgUrl, imgKey)}
+                                title="Copy image URL"
+                                aria-label="Copy image"
+                              >
+                                {copiedImgId === imgKey ? (
+                                  <CheckIcon size={13} className="brain-copy-check" />
+                                ) : (
+                                  <CopyIcon size={13} />
+                                )}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div
+                            className="brain-image-preview-wrapper"
+                            onClick={() => setLightboxImage(imgUrl)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => e.key === 'Enter' && setLightboxImage(imgUrl)}
+                          >
+                            <img
+                              src={imgUrl}
+                              alt="AI generated visual"
+                              className="brain-msg-image"
+                              loading="lazy"
+                            />
+                            <div className="brain-image-hover-overlay">
+                              <span className="brain-image-overlay-text">
+                                <MaximizeIcon size={14} /> Click to expand
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -311,6 +445,75 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
           </div>
         </form>
       </footer>
+
+      {/* Fullscreen Image Lightbox Modal */}
+      {lightboxImage && (
+        <div
+          className="brain-image-lightbox-backdrop"
+          onClick={() => setLightboxImage(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Enlarged Image Preview"
+        >
+          <div
+            className="brain-image-lightbox-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="brain-lightbox-header">
+              <div className="brain-lightbox-title-box">
+                <ImageIcon size={16} className="brain-lightbox-icon" />
+                <span className="brain-lightbox-title">Brain AI Generated Visual</span>
+              </div>
+              <div className="brain-lightbox-actions">
+                <button
+                  type="button"
+                  className="brain-lightbox-btn"
+                  onClick={() => handleDownloadImage(lightboxImage, 'brain-ai-full.jpg')}
+                  title="Download full image"
+                >
+                  <DownloadIcon size={14} />
+                  <span>Download</span>
+                </button>
+                <button
+                  type="button"
+                  className="brain-lightbox-btn"
+                  onClick={() => handleCopyImageUrl(lightboxImage, 'lightbox_copy')}
+                  title="Copy image URL"
+                >
+                  {copiedImgId === 'lightbox_copy' ? (
+                    <>
+                      <CheckIcon size={14} className="brain-copy-check" />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <CopyIcon size={14} />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="brain-lightbox-close-btn"
+                  onClick={() => setLightboxImage(null)}
+                  title="Close (Esc)"
+                  aria-label="Close image preview"
+                >
+                  <CloseIcon size={16} />
+                </button>
+              </div>
+            </header>
+
+            <div className="brain-lightbox-image-container">
+              <img
+                src={lightboxImage}
+                alt="AI Generated visual enlarged"
+                className="brain-lightbox-img"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -10,7 +10,7 @@ import {
   CURRENT_USER,
 } from '../../data/mockData'
 import type { AppSettings, ChatSession, DocumentItem, ChatMessage } from '../../types'
-import { chatService, mapHistoryToMessages, extractCodeBlock } from '../../services'
+import { chatService, mapHistoryToMessages, extractCodeBlock, extractImages } from '../../services'
 import { useTheme } from '../../hooks'
 import { STORAGE_KEYS } from '../../constants/app.constants'
 import './LandingPage.css'
@@ -256,12 +256,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         )
       } else {
         // Fallback: append assistant reply directly from chat response
-        const { cleanContent, codeSnippet } = extractCodeBlock(chatRes.message)
+        const { cleanContent: withoutCode, codeSnippet } = extractCodeBlock(chatRes.message)
+        const { cleanContent, images: extractedImages } = extractImages(withoutCode)
+        const directImage = chatRes.image_url || chatRes.imageUrl
+        const allImages = [
+          ...(directImage ? [directImage] : []),
+          ...(chatRes.images || []),
+          ...extractedImages,
+        ].filter((img, idx, arr) => arr.indexOf(img) === idx)
+        const imageUrl = allImages[0] || undefined
+
         const assistantMsg: ChatMessage = {
           id: `msg_a_${Date.now()}`,
           sender: 'assistant',
-          content: cleanContent,
+          content: cleanContent || (imageUrl ? 'Here is the generated image:' : chatRes.message),
           codeSnippet,
+          imageUrl,
+          images: allImages.length > 0 ? allImages : undefined,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         }
         setChats((prev) =>

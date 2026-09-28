@@ -44,6 +44,43 @@ export function extractCodeBlock(content: string): {
 }
 
 /**
+ * Extracts markdown images (![alt](url)), HTML <img> tags, or base64 data URIs
+ * Cleans content of bulky image data tags and collects image URLs
+ */
+export function extractImages(content: string): {
+  cleanContent: string
+  images: string[]
+} {
+  const images: string[] = []
+
+  // 1. Match Markdown images: ![alt](url)
+  const mdImgRegex = /!\[([^\]]*)\]\(((?:https?:\/\/[^\s)]+|data:image\/[a-zA-Z0-9.+_-]+;base64,[^\s)]+))\)/g
+  let match: RegExpExecArray | null
+  while ((match = mdImgRegex.exec(content)) !== null) {
+    if (match[2] && !images.includes(match[2])) {
+      images.push(match[2])
+    }
+  }
+
+  // 2. Match HTML <img> tags: <img ... src="..." ... />
+  const htmlImgRegex = /<img\s+[^>]*src=["']((?:https?:\/\/[^"']+|data:image\/[a-zA-Z0-9.+_-]+;base64,[^"']+))["'][^>]*\/?>/gi
+  while ((match = htmlImgRegex.exec(content)) !== null) {
+    if (match[1] && !images.includes(match[1])) {
+      images.push(match[1])
+    }
+  }
+
+  // Clean the text by removing the raw markdown image / data URIs so they don't clutter textual paragraphs
+  let cleanContent = content.replace(mdImgRegex, '').trim()
+  cleanContent = cleanContent.replace(htmlImgRegex, '').trim()
+
+  return {
+    cleanContent,
+    images,
+  }
+}
+
+/**
  * Converts backend history items to ChatMessage model used in UI
  */
 export function mapHistoryToMessages(
@@ -52,9 +89,26 @@ export function mapHistoryToMessages(
 ): ChatMessage[] {
   return conversation.map((item, index) => {
     const isUser = item.role === 'user'
-    const { cleanContent, codeSnippet } = !isUser
+
+    // 1. Extract code blocks
+    const { cleanContent: withoutCode, codeSnippet } = !isUser
       ? extractCodeBlock(item.content)
       : { cleanContent: item.content, codeSnippet: undefined }
+
+    // 2. Extract images from content markdown or HTML
+    const { cleanContent, images: extractedImages } = !isUser
+      ? extractImages(withoutCode)
+      : { cleanContent: withoutCode, images: [] }
+
+    // 3. Combine with direct image fields from backend
+    const directImage = item.image_url || item.imageUrl
+    const allImages = [
+      ...(directImage ? [directImage] : []),
+      ...(item.images || []),
+      ...extractedImages,
+    ].filter((img, idx, arr) => arr.indexOf(img) === idx)
+
+    const finalImageUrl = allImages[0] || undefined
 
     // Offset timestamps slightly for sequential display
     const msgTime = new Date(baseTimestamp.getTime() - (conversation.length - index) * 60000)
@@ -63,9 +117,11 @@ export function mapHistoryToMessages(
     return {
       id: `history_msg_${index}_${Date.now()}`,
       sender: isUser ? 'user' : 'assistant',
-      content: cleanContent,
+      content: cleanContent || (finalImageUrl ? 'Here is the generated image:' : item.content),
       timestamp: timeFormatted,
       codeSnippet,
+      imageUrl: finalImageUrl,
+      images: allImages.length > 0 ? allImages : undefined,
     }
   })
 }
