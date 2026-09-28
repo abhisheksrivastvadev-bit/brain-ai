@@ -81,7 +81,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     const loadInitialHistory = async () => {
       const initialSessions: ChatSession[] = []
 
-      // 1. Fetch Session 002 history: http://127.0.0.1:8000/api/history/?session_id=002
+      // 1. Fetch Session 002 history: http://127.0.0.1:8000/api/chat/history/?session_id=002
       try {
         const res002 = await chatService.getChatHistory('002')
         if (res002?.data?.conversation && res002.data.conversation.length > 0 && isMounted) {
@@ -184,7 +184,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   // Handler: Send message (both in landing hero and active conversation)
   // Executes:
   // 1. chat API: POST http://127.0.0.1:8000/api/chat/
-  // 2. history API: GET http://127.0.0.1:8000/api/history/?session_id={sessionId}
+  // 2. history API: GET http://127.0.0.1:8000/api/chat/history/?session_id={sessionId}
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return
     if (isSending) return
@@ -237,7 +237,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       // 1. Send message to Chat API: POST http://127.0.0.1:8000/api/chat/
       const chatRes = await chatService.sendMessage(promptText, system_prompt_for_api, sessionId)
 
-      // 2. Fetch updated history: GET http://127.0.0.1:8000/api/history/?session_id={sessionId}
+      // 2. Fetch updated history: GET http://127.0.0.1:8000/api/chat/history/?session_id={sessionId}
       const historyRes = await chatService.getChatHistory(sessionId)
 
       if (historyRes?.data?.conversation && historyRes.data.conversation.length > 0) {

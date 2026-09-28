@@ -2,7 +2,7 @@
  * Brain AI - Chat & History Service
  * Connects to:
  * 1. POST /api/chat/
- * 2. GET  /api/history/?session_id={session_id}
+ * 2. GET  /api/chat/history/?session_id={session_id}
  */
 
 import type {
@@ -106,10 +106,10 @@ export const chatService = {
   },
 
   /**
-   * 2. Fetch chat history: GET http://127.0.0.1:8000/api/history/?session_id={sessionId}
+   * 2. Fetch chat history: GET http://127.0.0.1:8000/api/chat/history/?session_id={sessionId}
    */
   async getChatHistory(sessionId: string = '002'): Promise<ChatHistoryResponse> {
-    const url = `${API_BASE_URL}/history/?session_id=${encodeURIComponent(sessionId)}`
+    const url = `${API_BASE_URL}/chat/history/?session_id=${encodeURIComponent(sessionId)}`
 
     try {
       const response = await fetch(url, {
@@ -135,7 +135,7 @@ export const chatService = {
   /**
    * Ask chat and sync history:
    * First posts the user's message to /api/chat/,
-   * then fetches the latest conversation history from /api/history/?session_id={sessionId}
+   * then fetches the latest conversation history from /api/chat/history/?session_id={sessionId}
    */
   async askChatAndSync(
     message: string,
