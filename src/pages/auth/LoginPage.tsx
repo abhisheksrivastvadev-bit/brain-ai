@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { AuthLayout } from './AuthLayout'
-import { Input, Button } from '../../components/ui'
+import { Input, Button, Loader } from '../../components/ui'
 import {
   MailIcon,
   LockIcon,
@@ -117,7 +117,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       isDark={isDark}
       onToggleTheme={onToggleTheme}
     >
-      <form onSubmit={handleSubmit} className="brain-login-form" noValidate id="form-login">
+      <form
+        onSubmit={handleSubmit}
+        className="brain-login-form"
+        noValidate
+        id="form-login"
+        style={{ position: 'relative' }}
+      >
+        {/* Prominent Loading Overlay during Authentication API call */}
+        {isLoading && (
+          <div className="brain-auth-loading-overlay" aria-live="polite">
+            <Loader
+              variant="spinner"
+              size="lg"
+              color="primary"
+              text="Signing in to Brain AI..."
+              textPosition="bottom"
+            />
+          </div>
+        )}
+
         {/* Banner Alert for Error */}
         {generalError && (
           <div className="brain-auth-alert-banner" role="alert" id="login-alert-error">
@@ -145,6 +164,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             setEmail(e.target.value)
             if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }))
           }}
+          onClear={() => {
+            setEmail('')
+            if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }))
+          }}
           leftIcon={<MailIcon size={18} />}
           isClearable
           required
@@ -165,7 +188,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             setPassword(e.target.value)
             if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }))
           }}
+          onClear={() => {
+            setPassword('')
+            if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }))
+          }}
           leftIcon={<LockIcon size={18} />}
+          isClearable
           required
           fullWidth
           error={errors.password}
@@ -273,7 +301,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   placeholder="abhishek@brain.ai"
                   value={forgotEmail}
                   onChange={(e) => setForgotEmail(e.target.value)}
+                  onClear={() => setForgotEmail('')}
                   leftIcon={<MailIcon size={18} />}
+                  isClearable
                   required
                   fullWidth
                 />

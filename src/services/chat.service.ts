@@ -12,6 +12,7 @@ import type {
   ChatPostRequest,
   ChatPostResponse,
 } from '../types'
+import { authService } from './auth.service'
 
 // Base URL: In dev, '/api' proxies to http://127.0.0.1:8000/api in vite.config.ts
 const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
@@ -126,27 +127,58 @@ export function mapHistoryToMessages(
   })
 }
 
+function getAuthHeaders(additionalHeaders: Record<string, string> = {}): Record<string, string> {
+  const headers: Record<string, string> = { ...additionalHeaders }
+  const token = authService.getToken()
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  return headers
+}
+
+function resolveSessionId(sessionId?: string): string {
+  if (sessionId && sessionId.trim()) {
+    return sessionId.trim()
+  }
+  const userId = authService.getUserId()
+  if (userId) {
+    return userId
+  }
+  return 'guest_session'
+}
+
 export const chatService = {
   /**
    * 1. Send chat message: POST http://127.0.0.1:8000/api/chat/
+   * Dynamically uses provided sessionId, current logged-in user_id, or guest fallback.
    */
-  async sendMessage(message: string, system_prompt?: string, sessionId: string = '002'): Promise<ChatPostResponse> {
+  async sendMessage(
+    message: string,
+    system_prompt?: string,
+    sessionId?: string
+  ): Promise<ChatPostResponse> {
+    const targetSessionId = resolveSessionId(sessionId)
     const url = `${API_BASE_URL}/chat/`
     const payload: ChatPostRequest = {
-      session_id: sessionId,
+      session_id: targetSessionId,
       message,
-      system_prompt
+      system_prompt,
     }
 
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
+        headers: getAuthHeaders({
           'Content-Type': 'application/json',
           Accept: 'application/json',
-        },
+        }),
         body: JSON.stringify(payload),
       })
+
+      if (response.status === 401) {
+        authService.logout()
+        throw new Error('Session expired or unauthorized. Please sign in again.')
+      }
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => '')
@@ -163,17 +195,33 @@ export const chatService = {
 
   /**
    * 2. Fetch chat history: GET http://127.0.0.1:8000/api/chat/history/?session_id={sessionId}
+   * Dynamically uses provided sessionId or current logged-in user_id.
    */
-  async getChatHistory(sessionId: string = '002'): Promise<ChatHistoryResponse> {
-    const url = `${API_BASE_URL}/chat/history/?session_id=${encodeURIComponent(sessionId)}`
+  async getChatHistory(sessionId?: string): Promise<ChatHistoryResponse> {
+    const targetSessionId = sessionId ? sessionId.trim() : (authService.getUserId() || '')
+
+    if (!targetSessionId) {
+      return {
+        success: true,
+        message: 'No active session id',
+        data: { conversation: [] },
+      }
+    }
+
+    const url = `${API_BASE_URL}/chat/history?session_id=${encodeURIComponent(targetSessionId)}`
 
     try {
       const response = await fetch(url, {
         method: 'GET',
-        headers: {
+        headers: getAuthHeaders({
           Accept: 'application/json',
-        },
+        }),
       })
+
+      if (response.status === 401) {
+        authService.logout()
+        throw new Error('Session expired or unauthorized. Please sign in again.')
+      }
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => '')
@@ -189,24 +237,24 @@ export const chatService = {
   },
 
   /**
-   * Ask chat and sync history:
-   * First posts the user's message to /api/chat/,
-   * then fetches the latest conversation history from /api/chat/history/?session_id={sessionId}
+   * Ask chat and sync history dynamically based on targetSessionId
    */
   async askChatAndSync(
     message: string,
     system_prompt?: string,
-    sessionId: string = '002'
+    sessionId?: string
   ): Promise<{
     chatResponse: ChatPostResponse
     historyResponse: ChatHistoryResponse
     messages: ChatMessage[]
   }> {
+    const targetSessionId = resolveSessionId(sessionId)
+
     // 1. Post message to chat API
-    const chatResponse = await this.sendMessage(message, system_prompt, sessionId)
+    const chatResponse = await this.sendMessage(message, system_prompt, targetSessionId)
 
     // 2. Fetch updated history from history API
-    const historyResponse = await this.getChatHistory(sessionId)
+    const historyResponse = await this.getChatHistory(targetSessionId)
 
     // 3. Map conversation to ChatMessage[]
     const conversation = historyResponse.data?.conversation || []

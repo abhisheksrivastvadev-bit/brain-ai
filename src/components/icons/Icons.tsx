@@ -1,4 +1,5 @@
 import React from 'react'
+import { InteractiveBrain } from '../ui/InteractiveBrain'
 
 export interface IconProps extends React.SVGProps<SVGSVGElement> {
   size?: number | string
@@ -570,28 +571,31 @@ export const UploadCloudIcon: React.FC<IconProps> = ({ size = 18, className = ''
   </svg>
 )
 
-export const BrainIcon: React.FC<IconProps> = ({ size = 20, className = '', ...props }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
+export interface BrainIconProps extends IconProps {
+  interactive?: boolean
+  thinking?: boolean
+  glow?: boolean
+}
+
+export const BrainIcon: React.FC<BrainIconProps> = ({
+  size = 20,
+  interactive = true,
+  thinking = false,
+  glow = true,
+  className = '',
+  ...props
+}) => (
+  <InteractiveBrain
+    size={typeof size === 'number' ? size : Number(size) || 20}
+    interactive={interactive}
+    thinking={thinking}
+    glow={glow}
     className={className}
     {...props}
-  >
-    <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" />
-    <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z" />
-    <path d="M12 5v13" />
-    <path d="M16 13h4" />
-    <path d="M4 13h4" />
-    <path d="M14.5 9h3" />
-    <path d="M6.5 9h3" />
-  </svg>
+  />
 )
+
+export { InteractiveBrain }
 
 export const SlidersIcon: React.FC<IconProps> = ({ size = 18, className = '', ...props }) => (
   <svg

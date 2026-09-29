@@ -49,6 +49,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const generatedId = useId()
     const inputId = id || `brain-input-${generatedId}`
+    const innerRef = React.useRef<HTMLInputElement>(null)
+    React.useImperativeHandle(ref, () => innerRef.current!)
+
     const isPasswordType = type === 'password'
     const [showPassword, setShowPassword] = useState(false)
     const [internalValue, setInternalValue] = useState<string>(
@@ -59,6 +62,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const currentValue = isControlled ? String(value) : internalValue
     const hasValue = Boolean(currentValue && currentValue.length > 0)
 
+    // Keep internal value in sync with external controlled value
+    React.useEffect(() => {
+      if (value !== undefined) {
+        setInternalValue(String(value))
+      }
+    }, [value])
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!isControlled) {
         setInternalValue(e.target.value)
@@ -66,11 +76,36 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       onChange?.(e)
     }
 
-    const handleClear = () => {
+    const handleClear = (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault()
+      e.stopPropagation()
+
       if (!isControlled) {
         setInternalValue('')
       }
       onClear?.()
+
+      const inputEl = innerRef.current || (document.getElementById(inputId) as HTMLInputElement | null)
+      if (inputEl) {
+        const nativeSetter = Object.getOwnPropertyDescriptor(
+          window.HTMLInputElement.prototype,
+          'value'
+        )?.set
+
+        if (nativeSetter) {
+          nativeSetter.call(inputEl, '')
+        } else {
+          inputEl.value = ''
+        }
+
+        const inputEvent = new Event('input', { bubbles: true })
+        inputEl.dispatchEvent(inputEvent)
+
+        const changeEvent = new Event('change', { bubbles: true })
+        inputEl.dispatchEvent(changeEvent)
+
+        inputEl.focus()
+      }
     }
 
     const resolvedType = isPasswordType ? (showPassword ? 'text' : 'password') : type
@@ -108,7 +143,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
 
           <input
-            ref={ref}
+            ref={innerRef}
             id={inputId}
             type={resolvedType}
             disabled={disabled}
@@ -133,10 +168,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {isClearable && hasValue && !disabled && (
               <button
                 type="button"
-                className="brain-input-action-btn"
+                className="brain-input-action-btn brain-input-action-btn--clear"
                 onClick={handleClear}
+                onMouseDown={(e) => e.preventDefault()}
                 tabIndex={-1}
                 aria-label="Clear input"
+                title="Clear"
               >
                 <CloseIcon size={14} />
               </button>

@@ -3,6 +3,7 @@ import {
   SendIcon,
   SparklesIcon,
   RefreshIcon,
+  BrainIcon,
 } from '../icons'
 import './HeroPrompt.css'
 
@@ -50,6 +51,9 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
       {/* Center Area: How can I help you? */}
       <div className="brain-hero-center-area">
         <div className="brain-hero-header">
+          <div className="brain-hero-brain-icon-wrapper" title="Brain AI Cognitive Core - Hover to interact">
+            <BrainIcon size={52} interactive thinking={isLoading} />
+          </div>
           <div className="brain-hero-pill-badge">
             <SparklesIcon size={13} className="brain-hero-sparkle" />
             <span>Brain AI Intelligence</span>

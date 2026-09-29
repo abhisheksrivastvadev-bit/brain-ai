@@ -4,10 +4,12 @@
 
 export interface User {
   id: string
+  user_id?: string
   name: string
   email: string
   avatar?: string
   role: 'admin' | 'user' | 'guest'
+  token?: string
 }
 
 export interface ApiResponse<T = unknown> {
@@ -113,6 +115,7 @@ export interface AuthResponse {
   message?: string
   user?: User
   token?: string
+  access_token?: string
   error?: string
 }
 

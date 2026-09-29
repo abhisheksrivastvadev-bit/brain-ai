@@ -512,3 +512,33 @@
   background: #e2e8f0;
 }
 
+/* Glassmorphic Loading Overlay during authentication */
+.brain-auth-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 15, 29, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 50;
+  border-radius: inherit;
+  animation: fadeInAuthOverlay 0.2s ease-out forwards;
+}
+
+[data-theme='light'] .brain-auth-loading-overlay {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+@keyframes fadeInAuthOverlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+

@@ -129,11 +129,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
 }
 
 .brain-msg-row--user .brain-msg-avatar {
-  background: linear-gradient(135deg, #6366f1, #22d3ee);
+  background: transparent;
 }
 
 .brain-msg-ai-icon {

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { AuthLayout } from './AuthLayout'
-import { Input, Button } from '../../components/ui'
+import { Input, Button, Loader } from '../../components/ui'
 import {
   UserIcon,
   MailIcon,
@@ -147,7 +147,26 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
       isDark={isDark}
       onToggleTheme={onToggleTheme}
     >
-      <form onSubmit={handleSubmit} className="brain-register-form" noValidate id="form-register">
+      <form
+        onSubmit={handleSubmit}
+        className="brain-register-form"
+        noValidate
+        id="form-register"
+        style={{ position: 'relative' }}
+      >
+        {/* Prominent Loading Overlay during Registration API call */}
+        {isLoading && (
+          <div className="brain-auth-loading-overlay" aria-live="polite">
+            <Loader
+              variant="spinner"
+              size="lg"
+              color="purple"
+              text="Creating your Brain AI account..."
+              textPosition="bottom"
+            />
+          </div>
+        )}
+
         {/* Banner Alert for General Error */}
         {generalError && (
           <div className="brain-auth-alert-banner" role="alert" id="register-alert-error">
@@ -175,6 +194,10 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
             setName(e.target.value)
             if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }))
           }}
+          onClear={() => {
+            setName('')
+            if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }))
+          }}
           leftIcon={<UserIcon size={18} />}
           isClearable
           required
@@ -193,6 +216,10 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
           value={email}
           onChange={(e) => {
             setEmail(e.target.value)
+            if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }))
+          }}
+          onClear={() => {
+            setEmail('')
             if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }))
           }}
           leftIcon={<MailIcon size={18} />}
@@ -216,7 +243,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
               setPassword(e.target.value)
               if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }))
             }}
+            onClear={() => {
+              setPassword('')
+              if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }))
+            }}
             leftIcon={<LockIcon size={18} />}
+            isClearable
             required
             fullWidth
             error={errors.password}
@@ -294,7 +326,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
               setPasswordConfirm(e.target.value)
               if (errors.passwordConfirm) setErrors((prev) => ({ ...prev, passwordConfirm: undefined }))
             }}
+            onClear={() => {
+              setPasswordConfirm('')
+              if (errors.passwordConfirm) setErrors((prev) => ({ ...prev, passwordConfirm: undefined }))
+            }}
             leftIcon={<LockIcon size={18} />}
+            isClearable
             required
             fullWidth
             error={errors.passwordConfirm}

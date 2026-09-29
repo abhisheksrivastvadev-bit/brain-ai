@@ -72,6 +72,26 @@
   gap: 14px;
 }
 
+.brain-hero-brain-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 20px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, rgba(6, 182, 212, 0.08) 70%, transparent 100%);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  box-shadow: 0 0 24px rgba(99, 102, 241, 0.25);
+  margin-bottom: 2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.brain-hero-brain-icon-wrapper:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow: 0 0 32px rgba(99, 102, 241, 0.4), 0 0 16px rgba(6, 182, 212, 0.3);
+}
+
 .brain-hero-pill-badge {
   display: inline-flex;
   align-items: center;

@@ -225,26 +225,11 @@
 }
 
 .brain-user-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-full);
-  background: linear-gradient(135deg, #6366f1, #22d3ee);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  font-size: 0.9rem;
-}
-
-.brain-user-status-dot {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-success);
-  border: 1.5px solid var(--bg-surface);
+  flex-shrink: 0;
 }
 
 .brain-user-name {
@@ -352,31 +337,186 @@
 .brain-user-dropdown-profile {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 8px 10px;
 }
 
-.brain-user-dropdown-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--bg-surface-subtle);
-  border: 1px solid var(--border-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-primary-400);
+.brain-user-dropdown-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .brain-user-dropdown-name {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .brain-user-dropdown-email {
   font-size: 0.72rem;
   color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Avatar Studio quick toggle button */
+.brain-user-dropdown-avatar-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  margin: 4px 0 6px 0;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-primary-400);
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--color-primary-300, #a5b4fc);
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.brain-user-dropdown-avatar-toggle:hover {
+  background: rgba(99, 102, 241, 0.16);
+  border-style: solid;
+  color: #ffffff;
+}
+
+/* Avatar Studio Picker Panel */
+.brain-user-avatar-picker-panel {
+  padding: 10px;
+  background: var(--bg-surface-elevated, #1e293b);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 8px;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.brain-avatar-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.brain-avatar-saved-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--color-success, #10b981);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.brain-avatar-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.brain-avatar-preset-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  background: var(--bg-surface-subtle);
+  padding: 2px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.brain-avatar-preset-btn img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.brain-avatar-preset-btn:hover {
+  transform: scale(1.12);
+  border-color: var(--color-primary-400);
+}
+
+.brain-avatar-preset-btn.active {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+}
+
+.brain-avatar-picker-actions {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.brain-avatar-initials-btn {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.brain-avatar-initials-btn:hover {
+  background: var(--bg-surface-subtle);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.brain-avatar-url-form {
+  display: flex;
+  gap: 6px;
+}
+
+.brain-avatar-url-input {
+  flex: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  outline: none;
+  min-width: 0;
+}
+
+.brain-avatar-url-input:focus {
+  border-color: var(--color-primary-500);
+}
+
+.brain-avatar-url-btn {
+  background: var(--color-primary-600);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.brain-avatar-url-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .brain-user-dropdown-divider {

@@ -3,12 +3,14 @@ import {
   BrainIcon,
   SunIcon,
   MoonIcon,
-  UserIcon,
   ChevronDownIcon,
   SlidersIcon,
   ArrowRightIcon,
+  SparklesIcon,
+  CheckIcon,
 } from '../icons'
-import { Badge, Button } from '../ui'
+import { Badge, Button, UserAvatar } from '../ui'
+import { authService } from '../../services/auth.service'
 import type { User, AppScreen } from '../../types'
 import './TopNavbar.css'
 
@@ -26,6 +28,15 @@ interface TopNavbarProps {
   onLogout?: () => void
 }
 
+const AVATAR_PRESETS = [
+  { id: 'p1', label: 'Quantum AI', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=QuantumAI' },
+  { id: 'p2', label: 'Cyber Core', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=CyberCore' },
+  { id: 'p3', label: 'Holo Pulse', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=HoloPulse' },
+  { id: 'p4', label: 'Neural Mind', url: 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=NeuralMind' },
+  { id: 'p5', label: 'Bio Synth', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=BioSynth' },
+  { id: 'p6', label: 'Neon Scout', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=NeonScout' },
+]
+
 export const TopNavbar: React.FC<TopNavbarProps> = ({
   user,
   isDark,
@@ -39,6 +50,29 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onLogout,
 }) => {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
+  const [customAvatarUrl, setCustomAvatarUrl] = useState('')
+  const [avatarSuccess, setAvatarSuccess] = useState(false)
+
+  const handleSelectAvatar = (url: string) => {
+    authService.updateCurrentUser({ avatar: url })
+    setAvatarSuccess(true)
+    setTimeout(() => setAvatarSuccess(false), 1200)
+  }
+
+  const handleCustomAvatarSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (customAvatarUrl.trim()) {
+      handleSelectAvatar(customAvatarUrl.trim())
+      setCustomAvatarUrl('')
+    }
+  }
+
+  const handleResetToInitials = () => {
+    authService.updateCurrentUser({ avatar: '' })
+    setAvatarSuccess(true)
+    setTimeout(() => setAvatarSuccess(false), 1200)
+  }
 
   return (
     <header className="brain-landing-nav" id="brain-top-nav">
@@ -58,7 +92,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
         <div className="brain-brand-lockup" id="brain-brand-header">
           <div className="brain-brand-icon-wrapper">
-            <BrainIcon size={22} className="brain-brand-icon" />
+            <BrainIcon size={24} className="brain-brand-icon" interactive thinking={false} />
             <span className="brain-brand-pulsar" />
           </div>
           <div className="brain-brand-text">
@@ -69,7 +103,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         </div>
       </div>
 
-      {/* Right: Actions & User Abhishek Profile */}
+      {/* Right: Actions & User Profile */}
       <div className="brain-nav-right">
         {/* Toggle between Prototype Landing Page & Design System Showcase */}
         <Button
@@ -103,13 +137,20 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               type="button"
               className="brain-user-pill"
               id="btn-user-profile"
-              onClick={() => setUserMenuOpen((prev) => !prev)}
+              onClick={() => {
+                setUserMenuOpen((prev) => !prev)
+                setShowAvatarPicker(false)
+              }}
               aria-expanded={userMenuOpen}
               aria-label={`User account: ${user.name}`}
             >
               <div className="brain-user-avatar">
-                <span className="brain-user-avatar-icon">👤</span>
-                <span className="brain-user-status-dot" title="Online" />
+                <UserAvatar
+                  user={user}
+                  size="sm"
+                  showStatus
+                  status="online"
+                />
               </div>
               <span className="brain-user-name" id="user-display-name">
                 {user.name}
@@ -121,14 +162,22 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               <>
                 <div
                   className="brain-dropdown-backdrop"
-                  onClick={() => setUserMenuOpen(false)}
+                  onClick={() => {
+                    setUserMenuOpen(false)
+                    setShowAvatarPicker(false)
+                  }}
                 />
                 <div className="brain-user-dropdown-menu" id="user-dropdown-menu">
                   <div className="brain-user-dropdown-profile">
-                    <div className="brain-user-dropdown-avatar">
-                      <UserIcon size={20} />
-                    </div>
-                    <div>
+                    <UserAvatar
+                      user={user}
+                      size="md"
+                      showStatus
+                      status="online"
+                      interactive
+                      onClick={() => setShowAvatarPicker((prev) => !prev)}
+                    />
+                    <div className="brain-user-dropdown-info">
                       <div className="brain-user-dropdown-name">{user.name}</div>
                       <div className="brain-user-dropdown-email">{user.email}</div>
                     </div>
@@ -137,6 +186,68 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                     </Badge>
                   </div>
 
+                  {/* Quick Avatar Customizer Toggle */}
+                  <button
+                    type="button"
+                    className="brain-user-dropdown-avatar-toggle"
+                    onClick={() => setShowAvatarPicker((prev) => !prev)}
+                  >
+                    <SparklesIcon size={14} />
+                    <span>{showAvatarPicker ? 'Hide Avatar Studio' : 'Customize Profile Avatar'}</span>
+                  </button>
+
+                  {/* Expandable Avatar Selector */}
+                  {showAvatarPicker && (
+                    <div className="brain-user-avatar-picker-panel">
+                      <div className="brain-avatar-picker-header">
+                        <span>Select Avatar Preset</span>
+                        {avatarSuccess && (
+                          <span className="brain-avatar-saved-tag">
+                            <CheckIcon size={12} /> Saved!
+                          </span>
+                        )}
+                      </div>
+                      <div className="brain-avatar-preset-grid">
+                        {AVATAR_PRESETS.map((preset) => (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            className={`brain-avatar-preset-btn ${user.avatar === preset.url ? 'active' : ''}`}
+                            onClick={() => handleSelectAvatar(preset.url)}
+                            title={preset.label}
+                          >
+                            <img src={preset.url} alt={preset.label} />
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Reset to deterministic initials */}
+                      <div className="brain-avatar-picker-actions">
+                        <button
+                          type="button"
+                          className="brain-avatar-initials-btn"
+                          onClick={handleResetToInitials}
+                        >
+                          Use Dynamic Initials
+                        </button>
+                      </div>
+
+                      {/* Custom image URL input */}
+                      <form onSubmit={handleCustomAvatarSubmit} className="brain-avatar-url-form">
+                        <input
+                          type="url"
+                          placeholder="Or paste custom image URL..."
+                          value={customAvatarUrl}
+                          onChange={(e) => setCustomAvatarUrl(e.target.value)}
+                          className="brain-avatar-url-input"
+                        />
+                        <button type="submit" className="brain-avatar-url-btn" disabled={!customAvatarUrl.trim()}>
+                          Apply
+                        </button>
+                      </form>
+                    </div>
+                  )}
+
                   <div className="brain-user-dropdown-divider" />
 
                   <button
@@ -144,6 +255,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                     className="brain-user-dropdown-link"
                     onClick={() => {
                       setUserMenuOpen(false)
+                      setShowAvatarPicker(false)
                       onOpenSettings()
                     }}
                   >
@@ -159,24 +271,13 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                     style={{ color: 'var(--color-error)' }}
                     onClick={() => {
                       setUserMenuOpen(false)
+                      setShowAvatarPicker(false)
                       onLogout?.()
                     }}
                   >
                     <ArrowRightIcon size={16} />
                     <span>Sign Out</span>
                   </button>
-
-                  <div className="brain-user-dropdown-divider" />
-
-                  <div className="brain-user-token-stat">
-                    <div className="brain-token-stat-row">
-                      <span>Context Usage</span>
-                      <span>19.4k / 128k</span>
-                    </div>
-                    <div className="brain-token-stat-bar">
-                      <div className="brain-token-stat-fill" style={{ width: '15%' }} />
-                    </div>
-                  </div>
                 </div>
               </>
             )}

@@ -10,7 +10,7 @@ import {
   ArrowRightIcon,
   SparklesIcon,
 } from '../icons'
-import { Input, Button } from '../ui'
+import { Input, Button, Loader } from '../ui'
 import { authService } from '../../services'
 import type { User } from '../../types'
 import './AuthModal.css'
@@ -221,6 +221,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       >
         <div className="brain-auth-modal-glow-line" />
 
+        {/* Prominent Loading Overlay during Authentication API call */}
+        {isLoading && (
+          <div className="brain-auth-loading-overlay" aria-live="polite">
+            <Loader
+              variant="spinner"
+              size="lg"
+              color="purple"
+              text={mode === 'register' ? 'Creating your account...' : 'Signing in to Brain AI...'}
+              textPosition="bottom"
+            />
+          </div>
+        )}
+
         {/* Modal Header */}
         <div className="brain-auth-modal-header">
           <div className="brain-auth-modal-brand-lockup">
@@ -316,7 +329,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   placeholder="abhishek@brain.ai"
                   value={forgotEmail}
                   onChange={(e) => setForgotEmail(e.target.value)}
+                  onClear={() => setForgotEmail('')}
                   leftIcon={<MailIcon size={18} />}
+                  isClearable
                   required
                   fullWidth
                 />
@@ -355,6 +370,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     setName(e.target.value)
                     if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }))
                   }}
+                  onClear={() => {
+                    setName('')
+                    if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }))
+                  }}
                   leftIcon={<UserIcon size={18} />}
                   isClearable
                   required
@@ -374,6 +393,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value)
+                  if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }))
+                }}
+                onClear={() => {
+                  setEmail('')
                   if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }))
                 }}
                 leftIcon={<MailIcon size={18} />}
@@ -397,7 +420,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     setPassword(e.target.value)
                     if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }))
                   }}
+                  onClear={() => {
+                    setPassword('')
+                    if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }))
+                  }}
                   leftIcon={<LockIcon size={18} />}
+                  isClearable
                   required
                   fullWidth
                   error={errors.password}
@@ -443,7 +471,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         setErrors((prev) => ({ ...prev, passwordConfirm: undefined }))
                       }
                     }}
+                    onClear={() => {
+                      setPasswordConfirm('')
+                      if (errors.passwordConfirm) {
+                        setErrors((prev) => ({ ...prev, passwordConfirm: undefined }))
+                      }
+                    }}
                     leftIcon={<LockIcon size={18} />}
+                    isClearable
                     required
                     fullWidth
                     error={errors.passwordConfirm}

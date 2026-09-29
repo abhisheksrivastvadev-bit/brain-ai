@@ -1,0 +1,178 @@
+/* Brain AI - Interactive Cognitive Brain Icon Styles */
+
+.interactive-brain-root {
+  display: inline-block;
+  vertical-align: middle;
+  transform-origin: center center;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease;
+  overflow: visible;
+}
+
+/* Interactive Hover Behavior */
+.interactive-brain-root.is-interactive {
+  cursor: pointer;
+}
+
+.interactive-brain-root.is-interactive:hover {
+  transform: scale(1.12);
+  filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.55)) drop-shadow(0 0 16px rgba(6, 182, 212, 0.35));
+}
+
+.interactive-brain-root.is-interactive:active {
+  transform: scale(0.96);
+}
+
+/* Lobe outlines */
+.interactive-brain-root .brain-lobe {
+  transition: stroke-width 0.2s ease, fill 0.2s ease;
+}
+
+.interactive-brain-root.is-interactive:hover .brain-lobe {
+  stroke-width: 2.1px;
+  fill: rgba(99, 102, 241, 0.22);
+}
+
+/* Circuit Pathways - Base & Hover Animation */
+.interactive-brain-root .circuit-path,
+.interactive-brain-root .circuit-bridge {
+  stroke-dasharray: 10 20;
+  stroke-dashoffset: 0;
+  transition: stroke-width 0.2s ease, opacity 0.2s ease;
+  opacity: 0.85;
+}
+
+.interactive-brain-root.is-interactive:hover .circuit-path,
+.interactive-brain-root.is-interactive:hover .circuit-bridge {
+  opacity: 1;
+  stroke-width: 1.6px;
+  animation: brainNeuralDash 1.2s linear infinite;
+}
+
+/* Synaptic Nodes - Glowing micro-pulses */
+.interactive-brain-root .synapse-node {
+  transform-origin: center center;
+  transition: r 0.2s ease, opacity 0.2s ease;
+}
+
+.interactive-brain-root.is-interactive:hover .synapse-node {
+  animation: brainNodePulse 1.6s ease-in-out infinite;
+}
+
+.interactive-brain-root.is-interactive:hover .nexus-core {
+  animation: brainCorePulse 1.2s ease-in-out infinite;
+}
+
+/* Staggered pulse delays for realistic biological neural firing */
+.interactive-brain-root .node-l1, .interactive-brain-root .node-r1 { animation-delay: 0.1s; }
+.interactive-brain-root .node-l2, .interactive-brain-root .node-r2 { animation-delay: 0.3s; }
+.interactive-brain-root .node-l3, .interactive-brain-root .node-r3 { animation-delay: 0.5s; }
+.interactive-brain-root .node-l4, .interactive-brain-root .node-r4 { animation-delay: 0.7s; }
+.interactive-brain-root .node-l5, .interactive-brain-root .node-r5 { animation-delay: 0.2s; }
+.interactive-brain-root .nexus-top { animation-delay: 0.4s; }
+.interactive-brain-root .nexus-bot { animation-delay: 0.8s; }
+
+/* Thinking / Cognitive Generation State */
+.interactive-brain-root.is-thinking {
+  animation: brainThinkingBreathe 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.6)) drop-shadow(0 0 20px rgba(99, 102, 241, 0.4));
+}
+
+.interactive-brain-root.is-thinking .circuit-path,
+.interactive-brain-root.is-thinking .circuit-bridge {
+  opacity: 1;
+  stroke-width: 1.7px;
+  animation: brainNeuralDash 0.9s linear infinite;
+}
+
+.interactive-brain-root.is-thinking .synapse-node {
+  animation: brainNodePulse 1s ease-in-out infinite;
+}
+
+.interactive-brain-root.is-thinking .ring-pulse {
+  transform-origin: 16px 16.2px;
+  animation: brainRingExpand 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+/* Synapse Firing (Click shockwave) */
+.interactive-brain-root.is-firing {
+  animation: brainFiringShockwave 0.65s cubic-bezier(0.1, 0.9, 0.2, 1);
+  filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.9)) drop-shadow(0 0 28px rgba(168, 85, 247, 0.7));
+}
+
+.interactive-brain-root.is-firing .circuit-path,
+.interactive-brain-root.is-firing .circuit-bridge {
+  stroke-width: 2.2px;
+  opacity: 1;
+  animation: brainNeuralDash 0.3s linear infinite;
+}
+
+.interactive-brain-root.is-firing .ring-pulse {
+  transform-origin: 16px 16.2px;
+  animation: brainRingExpand 0.6s ease-out 1;
+}
+
+/* Keyframe Animations */
+@keyframes brainNeuralDash {
+  from {
+    stroke-dashoffset: 30;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes brainNodePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.45);
+    opacity: 1;
+  }
+}
+
+@keyframes brainCorePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.6);
+    opacity: 1;
+  }
+}
+
+@keyframes brainThinkingBreathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes brainRingExpand {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+    stroke-width: 1.5px;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+    stroke-width: 0.2px;
+  }
+}
+
+@keyframes brainFiringShockwave {
+  0% {
+    transform: scale(0.92);
+  }
+  40% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

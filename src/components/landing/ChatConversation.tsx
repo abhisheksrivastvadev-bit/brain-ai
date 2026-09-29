@@ -13,6 +13,7 @@ import {
   CloseIcon,
 } from '../icons'
 import type { ChatSession, User } from '../../types'
+import { UserAvatar } from '../ui/Avatar'
 import './ChatConversation.css'
 
 interface ChatConversationProps {
@@ -176,10 +177,10 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
               {/* Avatar */}
               <div className="brain-msg-avatar">
                 {isUser ? (
-                  <span className="brain-msg-avatar-icon">👤</span>
+                  <UserAvatar user={currentUser} size={32} />
                 ) : (
                   <div className="brain-msg-ai-icon">
-                    <BrainIcon size={16} />
+                    <BrainIcon size={18} interactive thinking={false} />
                   </div>
                 )}
               </div>
@@ -390,7 +391,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
           <div className="brain-msg-row brain-msg-row--assistant">
             <div className="brain-msg-avatar">
               <div className="brain-msg-ai-icon brain-pulse-glow">
-                <BrainIcon size={16} />
+                <BrainIcon size={18} interactive thinking={true} />
               </div>
             </div>
             <div className="brain-msg-bubble">

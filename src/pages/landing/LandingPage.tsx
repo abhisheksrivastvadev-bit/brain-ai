@@ -85,62 +85,86 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     }
   }
 
-  // Pre-load conversation history on initial mount (focusing on session 002)
+  const currentUserId = (user && user.role !== 'guest' ? (user.user_id || (user.id?.startsWith('usr_guest') ? null : user.id)) : null) || null
+
+  // Pre-load conversation history dynamically based on real logged-in user_id
   useEffect(() => {
     let isMounted = true
 
-    const loadInitialHistory = async () => {
+    const loadUserHistory = async () => {
+      // If user is not logged in, reset chats
+      if (!currentUserId) {
+        if (isMounted) {
+          setChats([])
+          setActiveChatId(null)
+        }
+        return
+      }
+
       const initialSessions: ChatSession[] = []
 
-      // 1. Fetch Session 002 history: http://127.0.0.1:8000/api/chat/history/?session_id=002
+      // 1. Fetch user's primary chat history dynamically: GET /api/chat/history/?session_id={currentUserId}
       try {
-        const res002 = await chatService.getChatHistory('002')
-        if (res002?.data?.conversation && res002.data.conversation.length > 0 && isMounted) {
-          const lastMsg = res002.data.conversation[res002.data.conversation.length - 1]
+        const userRes = await chatService.getChatHistory(currentUserId)
+        if (userRes?.data?.conversation && userRes.data.conversation.length > 0 && isMounted) {
+          const msgs = userRes.data.conversation
+          const lastMsg = msgs[msgs.length - 1]
           initialSessions.push({
-            id: '002',
-            title: 'Session 002 (Preeti)',
+            id: currentUserId,
+            title: user?.name ? `${user.name}'s Chat` : 'Primary Chat',
             icon: 'default',
             description: lastMsg.content.slice(0, 48) + '...',
             updatedAt: 'Active',
             pinned: true,
-            messages: mapHistoryToMessages(res002.data.conversation),
+            messages: mapHistoryToMessages(msgs),
           })
         }
       } catch (err) {
-        console.warn('[LandingPage] Could not pre-fetch session 002:', err)
+        console.warn(`[LandingPage] Could not pre-fetch chat history for user ${currentUserId}:`, err)
       }
 
-      // 2. Fetch Session 001 history if available
+      // 2. Fetch any additional saved chat sessions created by this user
+      const userSessionsStorageKey = `brain_ai_user_sessions_${currentUserId}`
       try {
-        const res001 = await chatService.getChatHistory('001')
-        if (res001?.data?.conversation && res001.data.conversation.length > 0 && isMounted) {
-          const lastMsg01 = res001.data.conversation[res001.data.conversation.length - 1]
-          initialSessions.push({
-            id: '001',
-            title: 'Session 001 (Abhishek)',
-            icon: 'default',
-            description: lastMsg01.content.slice(0, 48) + '...',
-            updatedAt: 'Active',
-            pinned: false,
-            messages: mapHistoryToMessages(res001.data.conversation),
-          })
+        const extraSessionIds: string[] = JSON.parse(localStorage.getItem(userSessionsStorageKey) || '[]')
+        for (const sid of extraSessionIds) {
+          if (sid !== currentUserId) {
+            try {
+              const extraRes = await chatService.getChatHistory(sid)
+              if (extraRes?.data?.conversation && extraRes.data.conversation.length > 0 && isMounted) {
+                const extraMsgs = extraRes.data.conversation
+                const lastMsg = extraMsgs[extraMsgs.length - 1]
+                const firstUserMsg = extraMsgs.find((m) => m.role === 'user')?.content || 'Chat Session'
+                initialSessions.push({
+                  id: sid,
+                  title: firstUserMsg.slice(0, 24) + (firstUserMsg.length > 24 ? '...' : ''),
+                  icon: 'default',
+                  description: lastMsg.content.slice(0, 48) + '...',
+                  updatedAt: 'Active',
+                  pinned: false,
+                  messages: mapHistoryToMessages(extraMsgs),
+                })
+              }
+            } catch {
+              // optional session fetch failure fallback
+            }
+          }
         }
-      } catch {
-        // optional session 001
+      } catch (err) {
+        console.warn('[LandingPage] Could not parse stored user session IDs:', err)
       }
 
-      if (initialSessions.length > 0 && isMounted) {
+      if (isMounted) {
         setChats(initialSessions)
       }
     }
 
-    loadInitialHistory()
+    loadUserHistory()
 
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [currentUserId, user?.name])
 
   // Currently active chat session
   const activeChat = chats.find((c) => c.id === activeChatId) || null
@@ -163,11 +187,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     if (activeChatId === chatId) {
       setActiveChatId(null)
     }
+    if (currentUserId) {
+      try {
+        const key = `brain_ai_user_sessions_${currentUserId}`
+        const stored: string[] = JSON.parse(localStorage.getItem(key) || '[]')
+        const updated = stored.filter((id) => id !== chatId)
+        localStorage.setItem(key, JSON.stringify(updated))
+      } catch {}
+    }
   }
 
-  // Handler: Refresh conversation history from backend
+  // Handler: Refresh conversation history dynamically from backend
   const handleRefreshHistory = useCallback(async () => {
-    const sessionId = activeChatId || '002'
+    const sessionId = activeChatId || currentUserId
+    if (!sessionId) return
     setIsSending(true)
     try {
       const historyRes = await chatService.getChatHistory(sessionId)
@@ -190,7 +223,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     } finally {
       setIsSending(false)
     }
-  }, [activeChatId])
+  }, [activeChatId, currentUserId])
 
   // Handler: Send message (both in landing hero and active conversation)
   // Executes:
@@ -200,7 +233,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     if (!text.trim()) return
     if (isSending) return
 
-    const sessionId = activeChatId || '002'
+    // Dynamic session ID:
+    // If activeChatId is set, use it.
+    // If activeChatId is null:
+    // - For logged-in user:
+    //   If the main session (currentUserId) already exists and has messages, create a new session ID `${currentUserId}_${Date.now()}`.
+    //   Otherwise, use `currentUserId`.
+    // - For guest: create a temporary guest session `guest_${Date.now()}`.
+    let sessionId = activeChatId
+    let isNewExtraSession = false
+    if (!sessionId) {
+      if (currentUserId) {
+        const existingMainChat = chats.find((c) => c.id === currentUserId)
+        if (!existingMainChat || existingMainChat.messages.length === 0) {
+          sessionId = currentUserId
+        } else {
+          sessionId = `${currentUserId}_${Date.now()}`
+          isNewExtraSession = true
+        }
+      } else {
+        sessionId = `guest_${Date.now()}`
+      }
+    }
+
     const promptText = text.trim()
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
@@ -209,6 +264,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       sender: 'user',
       content: promptText,
       timestamp: now,
+    }
+
+    // Persist new session ID in user's saved sessions list
+    if (currentUserId && (isNewExtraSession || sessionId !== currentUserId)) {
+      try {
+        const key = `brain_ai_user_sessions_${currentUserId}`
+        const stored: string[] = JSON.parse(localStorage.getItem(key) || '[]')
+        if (!stored.includes(sessionId)) {
+          stored.push(sessionId)
+          localStorage.setItem(key, JSON.stringify(stored))
+        }
+      } catch {}
     }
 
     // Optimistically show user message and set active chat
@@ -227,7 +294,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       }
       const newChat: ChatSession = {
         id: sessionId,
-        title: `Session ${sessionId}`,
+        title: promptText.slice(0, 24) + (promptText.length > 24 ? '...' : ''),
         icon: 'default',
         description: promptText.slice(0, 48),
         updatedAt: 'Just now',
@@ -236,7 +303,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       return [newChat, ...prev]
     })
 
-    if (!activeChatId) {
+    if (activeChatId !== sessionId) {
       setActiveChatId(sessionId)
     }
 
@@ -419,6 +486,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         onClose={() => setIsSettingsModalOpen(false)}
         settings={settings}
         onSaveSettings={handleUpdateSettings}
+        user={user}
       />
     </div>
   )

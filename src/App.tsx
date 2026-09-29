@@ -75,6 +75,47 @@ export function App() {
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
 
+  // Automatically maintain and monitor session based on access_token
+  useEffect(() => {
+    // 1. Subscribe to auth changes across windows/components
+    const unsubscribe = authService.onAuthStateChanged((newUser) => {
+      setCurrentUser(newUser)
+    })
+
+    // 2. Set auto-logout timer based on access_token expiration
+    const token = authService.getToken()
+    let expireTimer: ReturnType<typeof setTimeout> | null = null
+
+    if (token) {
+      const remainingMs = authService.getTokenRemainingTime(token)
+      if (remainingMs > 0) {
+        expireTimer = setTimeout(() => {
+          console.warn('[App] Session access_token expired. Logging out.')
+          authService.logout()
+          setCurrentUser(null)
+        }, remainingMs)
+      } else {
+        authService.logout()
+        setCurrentUser(null)
+      }
+    }
+
+    // 3. Periodic check for token validity (e.g. computer wake from sleep)
+    const intervalCheck = setInterval(() => {
+      const activeToken = authService.getToken()
+      if (currentUser && !activeToken) {
+        authService.logout()
+        setCurrentUser(null)
+      }
+    }, 30000)
+
+    return () => {
+      unsubscribe()
+      if (expireTimer) clearTimeout(expireTimer)
+      clearInterval(intervalCheck)
+    }
+  }, [currentUser?.id])
+
   const handleAuthSuccess = (user: User) => {
     setCurrentUser(user)
     closeAuthModal()
