@@ -868,3 +868,66 @@
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
 }
+
+/* Light mode overrides for ChatConversation */
+[data-theme='light'] .brain-chat-header {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom-color: #e2e8f0;
+}
+
+[data-theme='light'] .brain-chat-footer {
+  background: #ffffff;
+  border-top-color: #e2e8f0;
+}
+
+[data-theme='light'] .brain-chat-input-box {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .brain-chat-input-box:focus-within {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+[data-theme='light'] .brain-msg-row--assistant .brain-msg-text {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  color: #0f172a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='light'] .brain-msg-text code {
+  background: #f1f5f9;
+  color: #0e7490;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme='light'] .brain-msg-reasoning-toggle {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+
+[data-theme='light'] .brain-msg-reasoning-content {
+  color: #475569;
+  border-top-color: #e2e8f0;
+}
+
+[data-theme='light'] .brain-chat-session-badge {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #334155;
+}
+
+[data-theme='light'] .brain-chat-sync-btn {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #334155;
+}
+
+[data-theme='light'] .brain-chat-sync-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}

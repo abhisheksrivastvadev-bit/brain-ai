@@ -11,7 +11,7 @@ import {
   CloseIcon,
   SparklesIcon,
 } from '../icons'
-import type { ChatSession, DocumentItem } from '../../types'
+import type { ChatSession, DocumentItem, AppScreen } from '../../types'
 import './Sidebar.css'
 
 interface SidebarProps {
@@ -27,6 +27,9 @@ interface SidebarProps {
   onOpenSettings: () => void
   isOpenMobile: boolean
   onCloseMobile: () => void
+  isLoggedIn?: boolean
+  onNavigate?: (screen: AppScreen) => void
+  onOpenAuth?: (mode: 'login' | 'register') => void
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -38,6 +41,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenSettings,
   isOpenMobile,
   onCloseMobile,
+  isLoggedIn = true,
+  onNavigate,
+  onOpenAuth,
 }) => {
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -112,162 +118,137 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="brain-new-chat-text">+ New Chat</span>
           </button>
 
-          {/* Quick Filter Search */}
-          <div className="brain-sidebar-search">
-            <SearchIcon size={14} className="brain-sidebar-search-icon" />
-            <input
-              type="text"
-              id="sidebar-search-input"
-              placeholder="Search chats & docs..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="brain-sidebar-search-input"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                className="brain-sidebar-search-clear"
-                onClick={() => setSearchQuery('')}
-                aria-label="Clear search"
-              >
-                <CloseIcon size={12} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Scrollable list of Chats & Documents */}
-        <div className="brain-sidebar-scroll">
-          {/* Section: Chats */}
-          <div className="brain-nav-section" id="section-chats">
-            <div className="brain-section-header">
-              <span className="brain-section-title">Chats</span>
-              {
-                chats.length > 0 &&
-                <span className="brain-section-count">{chats.length}</span>
-              }
-            </div>
-
-            <div className="brain-nav-list" role="list">
-              {filteredChats.map((chat) => {
-                const isActive = activeChatId === chat.id
-                return (
-                  <div
-                    key={chat.id}
-                    className={`brain-nav-item brain-chat-nav-item ${isActive ? 'active' : ''}`}
-                    id={`chat-item-${chat.id}`}
-                    role="listitem"
-                    onClick={() => {
-                      onSelectChat(chat.id)
-                      if (isOpenMobile) onCloseMobile()
-                    }}
-                  >
-                    <span className="brain-nav-item-icon">
-                      {getChatIcon(chat.icon)}
-                    </span>
-                    <div className="brain-nav-item-content">
-                      <span className="brain-nav-item-title">{chat.title}</span>
-                      <span className="brain-nav-item-sub">{chat.description}</span>
-                    </div>
-
-                    {chat.pinned && (
-                      <span title="Pinned">
-                        <PinIcon size={12} className="brain-pinned-icon" />
-                      </span>
-                    )}
-
-                    <div className="brain-item-actions">
-                      <button
-                        type="button"
-                        className="brain-item-action-btn brain-item-action--delete"
-                        id={`delete-${chat.id}`}
-                        onClick={(e) => onDeleteChat(chat.id, e)}
-                        aria-label={`Delete ${chat.title} chat`}
-                        title="Delete chat"
-                      >
-                        <TrashIcon size={13} />
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-
-              {filteredChats.length === 0 && (
-                <div className="brain-empty-nav-state">No matching chats</div>
-              )}
-            </div>
-          </div>
-
-          {/* Section: Documents */}
-          {/* <div className="brain-nav-section" id="section-documents">
-            <div className="brain-section-header">
-              <span className="brain-section-title">Documents</span>
-              <div className="brain-section-header-actions">
-                <span className="brain-section-count">{documents.length}</span>
+          {/* Quick Filter Search - Only visible when logged in */}
+          {isLoggedIn && (
+            <div className="brain-sidebar-search">
+              <SearchIcon size={14} className="brain-sidebar-search-icon" />
+              <input
+                type="text"
+                id="sidebar-search-input"
+                placeholder="Search chats..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="brain-sidebar-search-input"
+              />
+              {searchQuery && (
                 <button
                   type="button"
-                  className="brain-section-add-btn"
-                  id="btn-upload-document"
-                  onClick={onOpenUploadModal}
-                  aria-label="Upload document"
-                  title="Upload document"
+                  className="brain-sidebar-search-clear"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
                 >
-                  <UploadCloudIcon size={14} />
+                  <CloseIcon size={12} />
                 </button>
-              </div>
-            </div>
-            <div className="brain-section-divider" />
-
-            <div className="brain-nav-list" role="list">
-              {filteredDocs.map((doc) => {
-                const isSelected = selectedDocId === doc.id
-                return (
-                  <div
-                    key={doc.id}
-                    className={`brain-nav-item brain-doc-nav-item ${isSelected ? 'active' : ''}`}
-                    id={`doc-item-${doc.id}`}
-                    role="listitem"
-                    onClick={() => {
-                      onSelectDocument(doc)
-                      if (isOpenMobile) onCloseMobile()
-                    }}
-                  >
-                    <span className="brain-nav-item-icon brain-doc-icon-badge">
-                      <FileTextIcon size={16} />
-                    </span>
-                    <div className="brain-nav-item-content">
-                      <span className="brain-nav-item-title">{doc.name}</span>
-                      <span className="brain-nav-item-sub">
-                        {doc.size} • {doc.pages} pgs
-                      </span>
-                    </div>
-                    <span className="brain-doc-status-badge">RAG</span>
-                  </div>
-                )
-              })}
-
-              {filteredDocs.length === 0 && (
-                <div className="brain-empty-nav-state">No matching documents</div>
               )}
             </div>
-          </div> */}
+          )}
         </div>
 
-        {/* Sidebar Footer: Token usage & Settings */}
-        <div className="brain-sidebar-footer">
+        {/* If logged in: Show chats list and settings footer */}
+        {isLoggedIn ? (
+          <>
+            <div className="brain-sidebar-scroll">
+              {/* Section: Chats */}
+              <div className="brain-nav-section" id="section-chats">
+                <div className="brain-section-header">
+                  <span className="brain-section-title">Chats</span>
+                  {chats.length > 0 && <span className="brain-section-count">{chats.length}</span>}
+                </div>
 
-          <button
-            type="button"
-            className="brain-sidebar-settings-btn"
-            id="btn-sidebar-settings"
-            onClick={onOpenSettings}
-            aria-label="Open Settings"
+                <div className="brain-nav-list" role="list">
+                  {filteredChats.map((chat) => {
+                    const isActive = activeChatId === chat.id
+                    return (
+                      <div
+                        key={chat.id}
+                        className={`brain-nav-item brain-chat-nav-item ${isActive ? 'active' : ''}`}
+                        id={`chat-item-${chat.id}`}
+                        role="listitem"
+                        onClick={() => {
+                          onSelectChat(chat.id)
+                          if (isOpenMobile) onCloseMobile()
+                        }}
+                      >
+                        <span className="brain-nav-item-icon">{getChatIcon(chat.icon)}</span>
+                        <div className="brain-nav-item-content">
+                          <span className="brain-nav-item-title">{chat.title}</span>
+                          <span className="brain-nav-item-sub">{chat.description}</span>
+                        </div>
+
+                        {chat.pinned && (
+                          <span title="Pinned">
+                            <PinIcon size={12} className="brain-pinned-icon" />
+                          </span>
+                        )}
+
+                        <div className="brain-item-actions">
+                          <button
+                            type="button"
+                            className="brain-item-action-btn brain-item-action--delete"
+                            id={`delete-${chat.id}`}
+                            onClick={(e) => onDeleteChat(chat.id, e)}
+                            aria-label={`Delete ${chat.title} chat`}
+                            title="Delete chat"
+                          >
+                            <TrashIcon size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  {filteredChats.length === 0 && (
+                    <div className="brain-empty-nav-state">No matching chats</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Sidebar Footer: Token usage & Settings */}
+            <div className="brain-sidebar-footer">
+              <button
+                type="button"
+                className="brain-sidebar-settings-btn"
+                id="btn-sidebar-settings"
+                onClick={onOpenSettings}
+                aria-label="Open Settings"
+              >
+                <SettingsIcon size={18} className="brain-settings-icon" />
+                <span className="brain-settings-text">Settings</span>
+                <span className="brain-settings-sub">v2.5</span>
+              </button>
+            </div>
+          </>
+        ) : (
+          /* When NOT logged in: only new chat is available, plus guest invitation banner at the bottom */
+          <div
+            className="brain-sidebar-guest-container"
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
           >
-            <SettingsIcon size={18} className="brain-settings-icon" />
-            <span className="brain-settings-text">Settings</span>
-            <span className="brain-settings-sub">v2.5</span>
-          </button>
-        </div>
+            <div className="brain-sidebar-guest-notice" id="sidebar-guest-prompt">
+              <span className="brain-sidebar-guest-title">Save Your History</span>
+              <p className="brain-sidebar-guest-desc">
+                Sign in to save and sync your chat sessions, uploaded documents, and custom keys.
+              </p>
+              <button
+                type="button"
+                className="brain-auth-switch-btn"
+                style={{ textAlign: 'left', fontWeight: 600, padding: 0 }}
+                onClick={() => {
+                  if (onOpenAuth) {
+                    onOpenAuth('login')
+                  } else {
+                    onNavigate?.('login')
+                  }
+                  if (isOpenMobile) onCloseMobile()
+                }}
+                id="sidebar-guest-login-btn"
+              >
+                Log In or Register →
+              </button>
+            </div>
+          </div>
+        )}
       </aside>
     </>
   )

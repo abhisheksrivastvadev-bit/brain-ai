@@ -94,3 +94,28 @@ export interface ChatPostResponse {
   images?: string[]
 }
 
+export interface LoginCredentials {
+  email: string
+  password: string
+  rememberMe?: boolean
+}
+
+export interface RegisterCredentials {
+  name: string
+  email: string
+  password: string
+  passwordConfirm: string
+  agreeTerms?: boolean
+}
+
+export interface AuthResponse {
+  success: boolean
+  message?: string
+  user?: User
+  token?: string
+  error?: string
+}
+
+export type AppScreen = 'landing' | 'login' | 'register' | 'design-system'
+
+

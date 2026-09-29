@@ -1,0 +1,268 @@
+/* Brain AI - Auth Modal / Popup Styles */
+
+.brain-auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 12, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: authOverlayFade 0.2s ease-out;
+  overflow-y: auto;
+}
+
+@keyframes authOverlayFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.brain-auth-modal-card {
+  position: relative;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 
+    0 24px 60px -12px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: authModalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: auto;
+}
+
+@keyframes authModalPop {
+  from {
+    transform: scale(0.94) translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.brain-auth-modal-glow-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-cyber);
+}
+
+/* Modal Header */
+.brain-auth-modal-header {
+  padding: 22px 24px 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brain-auth-modal-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brain-auth-modal-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.35);
+  flex-shrink: 0;
+}
+
+.brain-auth-modal-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.brain-auth-modal-subtitle {
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+
+.brain-auth-modal-close-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.brain-auth-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+/* Segmented Switcher Tabs inside Popup */
+.brain-auth-modal-tabs {
+  display: flex;
+  background: var(--bg-surface-subtle);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 4px 6px;
+}
+
+.brain-auth-modal-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 9px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.brain-auth-modal-tab:hover {
+  color: var(--text-primary);
+}
+
+.brain-auth-modal-tab.active {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Modal Body / Form Container */
+.brain-auth-modal-body {
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: calc(88vh - 140px);
+  overflow-y: auto;
+}
+
+/* Password strength inside modal */
+.brain-modal-pwd-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: -4px;
+}
+
+.brain-modal-pwd-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.74rem;
+}
+
+.brain-modal-pwd-bars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  height: 3px;
+}
+
+.brain-modal-pwd-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.12);
+  transition: background-color var(--transition-fast);
+}
+
+.brain-modal-pwd-bar.active-weak { background-color: var(--color-error); }
+.brain-modal-pwd-bar.active-fair { background-color: var(--color-warning); }
+.brain-modal-pwd-bar.active-good { background-color: var(--color-info); }
+.brain-modal-pwd-bar.active-strong { background-color: var(--color-success); }
+
+.brain-modal-pwd-match {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  margin-top: -6px;
+}
+
+.brain-modal-pwd-match--ok {
+  color: var(--color-success);
+}
+
+.brain-modal-pwd-match--no {
+  color: var(--color-error);
+}
+
+/* Switch Prompt at the bottom */
+.brain-auth-modal-footer-switch {
+  text-align: center;
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  padding-top: 4px;
+}
+
+.brain-auth-modal-switch-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary-400);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color var(--transition-fast);
+}
+
+.brain-auth-modal-switch-btn:hover {
+  color: var(--color-accent-400);
+  text-decoration: underline;
+}
+
+/* Light mode overrides for Auth Modal */
+[data-theme='light'] .brain-auth-modal-overlay {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+[data-theme='light'] .brain-auth-modal-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme='light'] .brain-auth-modal-close-btn:hover {
+  background: #f1f5f9;
+}
+
+[data-theme='light'] .brain-auth-modal-tabs {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+[data-theme='light'] .brain-auth-modal-tab.active {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+[data-theme='light'] .brain-modal-pwd-bar {
+  background: #e2e8f0;
+}

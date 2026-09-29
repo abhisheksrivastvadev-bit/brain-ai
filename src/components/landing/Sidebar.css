@@ -485,3 +485,98 @@
     display: flex;
   }
 }
+
+/* Light mode overrides for Sidebar */
+[data-theme='light'] .brain-sidebar {
+  background: #ffffff;
+  border-right-color: #e2e8f0;
+}
+
+[data-theme='light'] .brain-btn-new-chat {
+  background: linear-gradient(135deg, #eef2ff 0%, #ecfeff 100%);
+  border-color: #c7d2fe;
+  color: #1e1b4b;
+}
+
+[data-theme='light'] .brain-btn-new-chat:hover {
+  background: linear-gradient(135deg, #e0e7ff 0%, #cffafe 100%);
+  border-color: #818cf8;
+}
+
+[data-theme='light'] .brain-shortcut-badge {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+[data-theme='light'] .brain-sidebar-search {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+[data-theme='light'] .brain-sidebar-search:focus-within {
+  background: #ffffff;
+  border-color: #6366f1;
+}
+
+[data-theme='light'] .brain-sidebar-search-input {
+  color: #0f172a;
+}
+
+[data-theme='light'] .brain-nav-item:hover {
+  background: #f1f5f9;
+}
+
+[data-theme='light'] .brain-nav-item.active {
+  background: #eef2ff;
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+[data-theme='light'] .brain-nav-item.active .brain-nav-item-title {
+  color: #4338ca;
+}
+
+[data-theme='light'] .brain-sidebar-settings-btn {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #334155;
+}
+
+[data-theme='light'] .brain-sidebar-settings-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Guest sidebar notice card */
+.brain-sidebar-guest-notice {
+  margin: 16px;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px dashed rgba(99, 102, 241, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.brain-sidebar-guest-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-primary-400);
+}
+
+.brain-sidebar-guest-desc {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+[data-theme='light'] .brain-sidebar-guest-notice {
+  background: #f5f7ff;
+  border-color: #c7d2fe;
+}
+
+[data-theme='light'] .brain-sidebar-guest-title {
+  color: #3730a3;
+}
+

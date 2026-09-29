@@ -446,3 +446,67 @@
     display: none;
   }
 }
+
+/* Nav Auth Actions for Guest */
+.brain-nav-auth-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Light mode overrides for TopNavbar */
+[data-theme='light'] .brain-landing-nav {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .brain-brand-name {
+  background: linear-gradient(135deg, #0f172a 30%, #4338ca 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme='light'] .brain-brand-badge {
+  background: #eef2ff;
+  color: #4338ca;
+  border-color: #c7d2fe;
+}
+
+[data-theme='light'] .brain-nav-icon-btn {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #334155;
+}
+
+[data-theme='light'] .brain-nav-icon-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+[data-theme='light'] .brain-user-pill {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+
+[data-theme='light'] .brain-user-pill:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+[data-theme='light'] .brain-user-name {
+  color: #0f172a;
+}
+
+[data-theme='light'] .brain-user-dropdown-menu {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme='light'] .brain-user-dropdown-link:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+

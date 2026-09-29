@@ -6,10 +6,7 @@ import { ChatConversation } from '../../components/landing/ChatConversation'
 import { DocumentModal } from '../../components/landing/DocumentModal'
 import { UploadModal } from '../../components/landing/UploadModal'
 import { SettingsModal } from '../../components/landing/SettingsModal'
-import {
-  CURRENT_USER,
-} from '../../data/mockData'
-import type { AppSettings, ChatSession, DocumentItem, ChatMessage } from '../../types'
+import type { AppSettings, ChatSession, DocumentItem, ChatMessage, User, AppScreen } from '../../types'
 import { chatService, mapHistoryToMessages, extractCodeBlock, extractImages } from '../../services'
 import { useTheme } from '../../hooks'
 import { STORAGE_KEYS } from '../../constants/app.constants'
@@ -40,12 +37,26 @@ const getInitialSettings = (): AppSettings => {
 interface LandingPageProps {
   onToggleDesignSystem: () => void
   isDesignSystemOpen: boolean
+  user?: User | null
+  onNavigate?: (screen: AppScreen) => void
+  onOpenAuth?: (mode: 'login' | 'register') => void
+  onLogout?: () => void
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onToggleDesignSystem,
   isDesignSystemOpen,
+  user = null,
+  onNavigate,
+  onOpenAuth,
+  onLogout,
 }) => {
+  const chatUser: User = user || {
+    id: 'usr_guest',
+    name: 'Guest User',
+    email: '',
+    role: 'guest',
+  }
   const { isDark, toggleTheme } = useTheme()
 
   // Chat sessions state
@@ -319,11 +330,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     setDocuments((prev) => [newDoc, ...prev])
   }
 
+  // Intercept navigation to 'login' and 'register' to open popup modal instead of screen
+  const handleNavigate = (targetScreen: AppScreen) => {
+    if (targetScreen === 'login') {
+      onOpenAuth?.('login')
+      return
+    }
+    if (targetScreen === 'register') {
+      onOpenAuth?.('register')
+      return
+    }
+    onNavigate?.(targetScreen)
+  }
+
   return (
     <div className="brain-landing-layout" id="brain-landing-app">
-      {/* 1. Header: Brain AI on left, 👤 Abhishek on right */}
+      {/* 1. Header: Brain AI on left, User profile or Log In/Sign Up buttons on right */}
       <TopNavbar
-        user={CURRENT_USER}
+        user={user ?? null}
         isDark={isDark}
         onToggleTheme={toggleTheme}
         onOpenSettings={() => setIsSettingsModalOpen(true)}
@@ -331,10 +355,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         onToggleDesignSystem={onToggleDesignSystem}
         isDesignSystemOpen={isDesignSystemOpen}
         onToggleSidebarMobile={() => setIsMobileSidebarOpen((prev) => !prev)}
+        onNavigate={handleNavigate}
+        onOpenAuth={onOpenAuth}
+        onLogout={onLogout}
       />
 
       <div className="brain-main-body">
-        {/* 2. Left Sidebar: + New Chat, Chats, Documents, Settings */}
+        {/* 2. Left Sidebar: If unauthenticated, only + New Chat is shown */}
         <Sidebar
           chats={chats}
           activeChatId={activeChatId}
@@ -348,6 +375,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           onOpenSettings={() => setIsSettingsModalOpen(true)}
           isOpenMobile={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
+          isLoggedIn={Boolean(user)}
+          onNavigate={handleNavigate}
+          onOpenAuth={onOpenAuth}
         />
 
         {/* 3. Main Workspace Area: Hero Prototype or Active Conversation */}
@@ -355,7 +385,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {activeChat ? (
             <ChatConversation
               chat={activeChat}
-              currentUser={CURRENT_USER}
+              currentUser={chatUser}
               onSendMessage={handleSendMessage}
               onBackToNewChat={handleNewChat}
               isLoading={isSending}
