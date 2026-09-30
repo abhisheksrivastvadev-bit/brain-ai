@@ -167,6 +167,20 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
         role="log"
         aria-live="polite"
       >
+        {chat.messages.length === 0 && !isLoading && (
+          <div className="brain-chat-empty-session">
+            <div className="brain-chat-empty-icon">
+              <SparklesIcon size={24} />
+            </div>
+            <h3 className="brain-chat-empty-title">Session {chat.id}</h3>
+            <p className="brain-chat-empty-desc">
+              {chat.description && chat.description !== 'No messages yet'
+                ? chat.description
+                : 'No messages in this session yet. Type a prompt below to start chatting!'}
+            </p>
+          </div>
+        )}
+
         {chat.messages.map((msg) => {
           const isUser = msg.sender === 'user'
           return (

@@ -171,7 +171,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       >
                         <span className="brain-nav-item-icon">{getChatIcon(chat.icon)}</span>
                         <div className="brain-nav-item-content">
-                          <span className="brain-nav-item-title">{chat.title}</span>
+                          <div className="brain-nav-item-top-row">
+                            <span className="brain-nav-item-title">{chat.title}</span>
+                            {chat.updatedAt && (
+                              <span className="brain-nav-item-time">{chat.updatedAt}</span>
+                            )}
+                          </div>
                           <span className="brain-nav-item-sub">{chat.description}</span>
                         </div>
 

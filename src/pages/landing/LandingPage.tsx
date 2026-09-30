@@ -7,7 +7,14 @@ import { DocumentModal } from '../../components/landing/DocumentModal'
 import { UploadModal } from '../../components/landing/UploadModal'
 import { SettingsModal } from '../../components/landing/SettingsModal'
 import type { AppSettings, ChatSession, DocumentItem, ChatMessage, User, AppScreen } from '../../types'
-import { chatService, mapHistoryToMessages, extractCodeBlock, extractImages } from '../../services'
+import {
+  chatService,
+  mapHistoryToMessages,
+  parseChatSessionsFromHistory,
+  extractCodeBlock,
+  extractImages,
+  dataManager,
+} from '../../services'
 import { useTheme } from '../../hooks'
 import { STORAGE_KEYS } from '../../constants/app.constants'
 import './LandingPage.css'
@@ -61,7 +68,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   // Chat sessions state
   const [chats, setChats] = useState<ChatSession[]>([])
-  const [activeChatId, setActiveChatId] = useState<string | null>(null)
+  const [activeChatId, setActiveChatId] = useState<string | null>(() => dataManager.getActiveSessionId())
   const [isSending, setIsSending] = useState(false)
 
   // Documents state
@@ -85,77 +92,93 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     }
   }
 
-  const currentUserId = (user && user.role !== 'guest' ? (user.user_id || (user.id?.startsWith('usr_guest') ? null : user.id)) : null) || null
+  const currentUserId =
+    dataManager.getUserId() ||
+    (user && user.role !== 'guest' ? (user.user_id || (user.id?.startsWith('usr_guest') ? null : user.id)) : null) ||
+    null
+
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
 
   // Pre-load conversation history dynamically based on real logged-in user_id
   useEffect(() => {
     let isMounted = true
 
     const loadUserHistory = async () => {
+      const effectiveUserId =
+        currentUserId ||
+        dataManager.getUserId() ||
+        (user && user.role !== 'guest' ? (user.user_id || (user.id?.startsWith('usr_guest') ? null : user.id)) : null) ||
+        null
+
       // If user is not logged in, reset chats
-      if (!currentUserId) {
+      if (!effectiveUserId) {
         if (isMounted) {
           setChats([])
           setActiveChatId(null)
+          dataManager.setActiveSessionId(null)
         }
         return
       }
 
-      const initialSessions: ChatSession[] = []
-
-      // 1. Fetch user's primary chat history dynamically: GET /api/chat/history/?session_id={currentUserId}
       try {
-        const userRes = await chatService.getChatHistory(currentUserId)
-        if (userRes?.data?.conversation && userRes.data.conversation.length > 0 && isMounted) {
-          const msgs = userRes.data.conversation
-          const lastMsg = msgs[msgs.length - 1]
-          initialSessions.push({
-            id: currentUserId,
-            title: user?.name ? `${user.name}'s Chat` : 'Primary Chat',
-            icon: 'default',
-            description: lastMsg.content.slice(0, 48) + '...',
-            updatedAt: 'Active',
-            pinned: true,
-            messages: mapHistoryToMessages(msgs),
+        // API 1: Fetch all conversations for sidebar display
+        // GET /api/chat/history?user_id={effectiveUserId}
+        const res = await chatService.getConversations(effectiveUserId)
+        if (!isMounted) return
+
+        const conversationData = res?.data?.conversation
+        const parsedSessions = parseChatSessionsFromHistory(conversationData, new Date(), effectiveUserId)
+
+        if (parsedSessions.length > 0 && isMounted) {
+          // Sort newest sessions at the top based on updatedAtRaw
+          const orderedSessions = [...parsedSessions].sort((a, b) => {
+            const timeA = a.updatedAtRaw ? new Date(a.updatedAtRaw).getTime() : 0
+            const timeB = b.updatedAtRaw ? new Date(b.updatedAtRaw).getTime() : 0
+            return timeB - timeA
           })
-        }
-      } catch (err) {
-        console.warn(`[LandingPage] Could not pre-fetch chat history for user ${currentUserId}:`, err)
-      }
 
-      // 2. Fetch any additional saved chat sessions created by this user
-      const userSessionsStorageKey = `brain_ai_user_sessions_${currentUserId}`
-      try {
-        const extraSessionIds: string[] = JSON.parse(localStorage.getItem(userSessionsStorageKey) || '[]')
-        for (const sid of extraSessionIds) {
-          if (sid !== currentUserId) {
-            try {
-              const extraRes = await chatService.getChatHistory(sid)
-              if (extraRes?.data?.conversation && extraRes.data.conversation.length > 0 && isMounted) {
-                const extraMsgs = extraRes.data.conversation
-                const lastMsg = extraMsgs[extraMsgs.length - 1]
-                const firstUserMsg = extraMsgs.find((m) => m.role === 'user')?.content || 'Chat Session'
-                initialSessions.push({
-                  id: sid,
-                  title: firstUserMsg.slice(0, 24) + (firstUserMsg.length > 24 ? '...' : ''),
-                  icon: 'default',
-                  description: lastMsg.content.slice(0, 48) + '...',
-                  updatedAt: 'Active',
-                  pinned: false,
-                  messages: mapHistoryToMessages(extraMsgs),
-                })
-              }
-            } catch {
-              // optional session fetch failure fallback
-            }
+          // Sync all session IDs to dataManager
+          for (const s of orderedSessions) {
+            dataManager.saveUserSession(s.id, effectiveUserId)
           }
+
+          // Determine which session should be active
+          const savedActiveId = dataManager.getActiveSessionId()
+          const matchedSession = orderedSessions.find((s) => s.id === savedActiveId)
+          const targetSession = matchedSession || orderedSessions[0]
+
+          setActiveChatId(targetSession.id)
+          dataManager.setActiveSessionId(targetSession.id)
+          setChats(orderedSessions)
+
+          // API 2: Fetch full messages for the active session
+          // GET /api/chat/history/{session_id}?user_id={effectiveUserId}
+          try {
+            const sessionRes = await chatService.getSessionMessages(targetSession.id, effectiveUserId)
+            if (isMounted && sessionRes?.data?.messages) {
+              const fullMessages = mapHistoryToMessages(
+                sessionRes.data.messages,
+                new Date(),
+                targetSession.id
+              )
+              setChats((prev) =>
+                prev.map((c) =>
+                  c.id === targetSession.id
+                    ? { ...c, messages: fullMessages }
+                    : c
+                )
+              )
+            }
+          } catch (sessionErr) {
+            console.warn('[LandingPage] Failed to load messages for active session:', sessionErr)
+          }
+        } else if (isMounted) {
+          setChats([])
+          setActiveChatId(null)
+          dataManager.setActiveSessionId(null)
         }
       } catch (err) {
-        console.warn('[LandingPage] Could not parse stored user session IDs:', err)
-      }
-
-      if (isMounted) {
-        setChats(initialSessions)
+        console.warn('[LandingPage] Failed to load chat history on mount:', err)
       }
     }
 
@@ -164,20 +187,58 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     return () => {
       isMounted = false
     }
-  }, [currentUserId, user?.name])
+  }, [currentUserId, user])
 
   // Currently active chat session
   const activeChat = chats.find((c) => c.id === activeChatId) || null
 
-  // Handler: New Chat (resets to empty landing prototype view)
+  // Handler: New Chat (resets to empty landing prototype view so next message gets a new random session_id)
   const handleNewChat = () => {
     setActiveChatId(null)
+    dataManager.setActiveSessionId(null)
   }
 
   // Handler: Select existing chat
-  const handleSelectChat = (chatId: string) => {
+  const handleSelectChat = async (chatId: string) => {
     setActiveChatId(chatId)
+    dataManager.setActiveSessionId(chatId)
     setIsMobileSidebarOpen(false)
+
+    const effectiveUserId =
+      currentUserId ||
+      dataManager.getUserId() ||
+      (user && user.role !== 'guest' ? (user.user_id || (user.id?.startsWith('usr_guest') ? null : user.id)) : null) ||
+      null
+
+    if (effectiveUserId) {
+      const target = chats.find((c) => c.id === chatId)
+      if (!target || target.messages.length === 0) {
+        setIsLoadingMessages(true)
+      }
+      try {
+        // API 2: Fetch conversation messages for selected session
+        // GET /api/chat/history/{chatId}?user_id={effectiveUserId}
+        const sessionRes = await chatService.getSessionMessages(chatId, effectiveUserId)
+        if (sessionRes?.data?.messages) {
+          const loadedMessages = mapHistoryToMessages(
+            sessionRes.data.messages,
+            new Date(),
+            chatId
+          )
+          setChats((prev) =>
+            prev.map((c) =>
+              c.id === chatId
+                ? { ...c, messages: loadedMessages }
+                : c
+            )
+          )
+        }
+      } catch (err) {
+        console.error(`[LandingPage] Failed to load messages for session ${chatId}:`, err)
+      } finally {
+        setIsLoadingMessages(false)
+      }
+    }
   }
 
   // Handler: Delete chat
@@ -186,26 +247,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     setChats((prev) => prev.filter((c) => c.id !== chatId))
     if (activeChatId === chatId) {
       setActiveChatId(null)
+      dataManager.setActiveSessionId(null)
     }
     if (currentUserId) {
-      try {
-        const key = `brain_ai_user_sessions_${currentUserId}`
-        const stored: string[] = JSON.parse(localStorage.getItem(key) || '[]')
-        const updated = stored.filter((id) => id !== chatId)
-        localStorage.setItem(key, JSON.stringify(updated))
-      } catch {}
+      dataManager.removeUserSession(chatId, currentUserId)
     }
   }
 
   // Handler: Refresh conversation history dynamically from backend
   const handleRefreshHistory = useCallback(async () => {
-    const sessionId = activeChatId || currentUserId
+    const sessionId = activeChatId
+    const effectiveUserId = currentUserId || dataManager.getUserId() || undefined
     if (!sessionId) return
     setIsSending(true)
     try {
-      const historyRes = await chatService.getChatHistory(sessionId)
-      if (historyRes?.data?.conversation) {
-        const syncedMessages = mapHistoryToMessages(historyRes.data.conversation)
+      // 1. Fetch latest messages for active session (API 2)
+      const sessionRes = await chatService.getSessionMessages(sessionId, effectiveUserId)
+      if (sessionRes?.data?.messages) {
+        const syncedMessages = mapHistoryToMessages(
+          sessionRes.data.messages,
+          new Date(),
+          sessionId
+        )
         setChats((prev) =>
           prev.map((c) =>
             c.id === sessionId
@@ -218,6 +281,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           )
         )
       }
+
+      // 2. Sync sidebar conversation list in background (API 1)
+      if (effectiveUserId) {
+        const convRes = await chatService.getConversations(effectiveUserId)
+        if (convRes?.data?.conversation) {
+          const parsed = parseChatSessionsFromHistory(convRes.data.conversation, new Date(), effectiveUserId)
+          if (parsed.length > 0) {
+            setChats((prev) =>
+              parsed.map((p) => {
+                const existing = prev.find((e) => e.id === p.id)
+                return existing && existing.messages.length > 0
+                  ? { ...p, messages: existing.messages }
+                  : p
+              })
+            )
+          }
+        }
+      }
     } catch (err) {
       console.error('[LandingPage] Failed to sync history:', err)
     } finally {
@@ -227,33 +308,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   // Handler: Send message (both in landing hero and active conversation)
   // Executes:
-  // 1. chat API: POST http://127.0.0.1:8000/api/chat/
-  // 2. history API: GET http://127.0.0.1:8000/api/chat/history/?session_id={sessionId}
+  // 1. POST /api/chat/
+  //    Payload: { user_id?: currentUserId, session_id: sessionId, message: promptText, system_prompt?: ... }
+  // 2. API 2: GET /api/chat/history/{sessionId}?user_id={user_id}
+  // 3. API 1: GET /api/chat/history?user_id={user_id} (syncs sidebar sessions)
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return
     if (isSending) return
 
     // Dynamic session ID:
-    // If activeChatId is set, use it.
-    // If activeChatId is null:
-    // - For logged-in user:
-    //   If the main session (currentUserId) already exists and has messages, create a new session ID `${currentUserId}_${Date.now()}`.
-    //   Otherwise, use `currentUserId`.
-    // - For guest: create a temporary guest session `guest_${Date.now()}`.
+    // If activeChatId is already set, continue using that chat session.
+    // If activeChatId is null (user is starting a new chat):
+    // generate a brand new random session ID so every new chat has a unique session ID.
     let sessionId = activeChatId
-    let isNewExtraSession = false
+    let isNewChatSession = false
+
     if (!sessionId) {
-      if (currentUserId) {
-        const existingMainChat = chats.find((c) => c.id === currentUserId)
-        if (!existingMainChat || existingMainChat.messages.length === 0) {
-          sessionId = currentUserId
-        } else {
-          sessionId = `${currentUserId}_${Date.now()}`
-          isNewExtraSession = true
-        }
-      } else {
-        sessionId = `guest_${Date.now()}`
-      }
+      sessionId = dataManager.generateSessionId()
+      isNewChatSession = true
     }
 
     const promptText = text.trim()
@@ -266,16 +338,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       timestamp: now,
     }
 
+    const effectiveUserId =
+      currentUserId ||
+      dataManager.getUserId() ||
+      (user && user.role !== 'guest' ? (user.user_id || (user.id?.startsWith('usr_guest') ? null : user.id)) : null) ||
+      undefined
+
     // Persist new session ID in user's saved sessions list
-    if (currentUserId && (isNewExtraSession || sessionId !== currentUserId)) {
-      try {
-        const key = `brain_ai_user_sessions_${currentUserId}`
-        const stored: string[] = JSON.parse(localStorage.getItem(key) || '[]')
-        if (!stored.includes(sessionId)) {
-          stored.push(sessionId)
-          localStorage.setItem(key, JSON.stringify(stored))
-        }
-      } catch {}
+    if (effectiveUserId && isNewChatSession) {
+      dataManager.saveUserSession(sessionId, effectiveUserId)
     }
 
     // Optimistically show user message and set active chat
@@ -288,6 +359,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               ...c,
               messages: [...c.messages, userMsg],
               updatedAt: 'Just now',
+              description: promptText.slice(0, 48),
             }
             : c
         )
@@ -305,6 +377,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
     if (activeChatId !== sessionId) {
       setActiveChatId(sessionId)
+      dataManager.setActiveSessionId(sessionId)
     }
 
     setIsSending(true)
@@ -312,14 +385,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     try {
       const system_prompt_for_api = settings.systemPrompt?.trim() || undefined
 
-      // 1. Send message to Chat API: POST http://127.0.0.1:8000/api/chat/
-      const chatRes = await chatService.sendMessage(promptText, system_prompt_for_api, sessionId)
+      // 1. Send message to Chat API: POST /api/chat/
+      const chatRes = await chatService.sendMessage(
+        promptText,
+        system_prompt_for_api,
+        sessionId,
+        effectiveUserId
+      )
 
-      // 2. Fetch updated history: GET http://127.0.0.1:8000/api/chat/history/?session_id={sessionId}
-      const historyRes = await chatService.getChatHistory(sessionId)
+      // 2. Fetch updated messages: API 2 GET /api/chat/history/{sessionId}?user_id={user_id}
+      let syncedMessages: ChatMessage[] = []
+      try {
+        const sessionRes = await chatService.getSessionMessages(sessionId, effectiveUserId)
+        if (sessionRes?.data?.messages && sessionRes.data.messages.length > 0) {
+          syncedMessages = mapHistoryToMessages(sessionRes.data.messages, new Date(), sessionId)
+        }
+      } catch (sessionErr) {
+        console.warn('[LandingPage] Failed to fetch session messages from API 2:', sessionErr)
+      }
 
-      if (historyRes?.data?.conversation && historyRes.data.conversation.length > 0) {
-        const syncedMessages = mapHistoryToMessages(historyRes.data.conversation)
+      if (syncedMessages.length > 0) {
         setChats((prev) =>
           prev.map((c) =>
             c.id === sessionId
@@ -361,6 +446,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           )
         )
       }
+
+      // 3. Sync sidebar conversation list in background: API 1 GET /api/chat/history?user_id={user_id}
+      if (effectiveUserId) {
+        try {
+          const convRes = await chatService.getConversations(effectiveUserId)
+          if (convRes?.data?.conversation) {
+            const parsed = parseChatSessionsFromHistory(convRes.data.conversation, new Date(), effectiveUserId)
+            if (parsed.length > 0) {
+              setChats((prev) =>
+                parsed.map((p) => {
+                  const existing = prev.find((e) => e.id === p.id)
+                  return existing && existing.messages.length > 0
+                    ? { ...p, messages: existing.messages }
+                    : p
+                })
+              )
+            }
+          }
+        } catch (convErr) {
+          console.warn('[LandingPage] Failed to sync sidebar conversations:', convErr)
+        }
+      }
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown communication error'
       console.error('[LandingPage] Chat API Error:', err)
@@ -390,6 +497,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   // Handler: "Chat with this document" from Document Modal
   const handleChatWithDocument = () => {
     setActiveChatId(null)
+    dataManager.setActiveSessionId(null)
   }
 
   // Handler: Add newly uploaded document to Documents list
@@ -455,7 +563,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               currentUser={chatUser}
               onSendMessage={handleSendMessage}
               onBackToNewChat={handleNewChat}
-              isLoading={isSending}
+              isLoading={isSending || isLoadingMessages}
               onRefreshHistory={handleRefreshHistory}
             />
           ) : (

@@ -45,6 +45,13 @@ export interface ChatSession {
   updatedAt: string
   pinned?: boolean
   messages: ChatMessage[]
+  createdAt?: string
+  updatedAtRaw?: string
+  lastMessage?: {
+    role: string
+    content: string
+    image_url?: string | null
+  } | null
 }
 
 export interface DocumentItem {
@@ -67,23 +74,65 @@ export interface AppSettings {
   apiKey?: string
 }
 
+/**
+ * Single item in conversation history list for sidebar:
+ * GET /api/chat/history?user_id={user_id}
+ */
+export interface ConversationSummaryItem {
+  id: number | string
+  user_id: string
+  session_id: string
+  created_at: string
+  updated_at: string
+  last_message?: {
+    role: 'user' | 'assistant' | string
+    content: string
+    image_url?: string | null
+  } | null
+}
+
+/**
+ * Message item returned by session history:
+ * GET /api/chat/history/{session_id}?user_id={user_id}
+ */
 export interface ChatHistoryItem {
-  role: 'user' | 'assistant'
+  role: 'user' | 'assistant' | string
   content: string
-  image_url?: string
-  imageUrl?: string
+  image_url?: string | null
+  imageUrl?: string | null
   images?: string[]
 }
 
-export interface ChatHistoryResponse {
+/**
+ * API 1: All conversation history for sidebar
+ * GET /api/chat/history?user_id={user_id}
+ */
+export interface ConversationListResponse {
   success: boolean
   message: string
   data: {
-    conversation: ChatHistoryItem[]
+    conversation: ConversationSummaryItem[] | ChatHistoryItem[] | Record<string, ChatHistoryItem[]>
   }
 }
 
+/**
+ * API 2: Get history based on session
+ * GET /api/chat/history/{session_id}?user_id={user_id}
+ */
+export interface SessionHistoryResponse {
+  success: boolean
+  message: string
+  data: {
+    messages?: ChatHistoryItem[]
+    conversation?: ChatHistoryItem[] | Record<string, ChatHistoryItem[]>
+  }
+}
+
+// Backward-compatible alias for existing code
+export type ChatHistoryResponse = ConversationListResponse
+
 export interface ChatPostRequest {
+  user_id?: string
   session_id: string
   message: string
   system_prompt?: string

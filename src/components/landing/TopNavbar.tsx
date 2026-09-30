@@ -42,8 +42,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   isDark,
   onToggleTheme,
   onOpenSettings,
-  onToggleDesignSystem,
-  isDesignSystemOpen,
+  onToggleDesignSystem: _onToggleDesignSystem,
+  isDesignSystemOpen: _isDesignSystemOpen,
   onToggleSidebarMobile,
   onNavigate,
   onOpenAuth,
@@ -106,7 +106,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       {/* Right: Actions & User Profile */}
       <div className="brain-nav-right">
         {/* Toggle between Prototype Landing Page & Design System Showcase */}
-        <Button
+        {/* <Button
           variant={isDesignSystemOpen ? 'primary' : 'outline'}
           size="sm"
           shape="pill"
@@ -116,7 +116,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           className="brain-nav-ds-btn"
         >
           {isDesignSystemOpen ? 'Back to Landing' : 'UI Kit View'}
-        </Button>
+        </Button> */}
 
         {/* Theme Toggle */}
         <button
