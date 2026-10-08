@@ -174,6 +174,52 @@
   color: var(--text-muted);
 }
 
+.brain-msg-attachment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(99, 102, 241, 0.14);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-primary-400);
+  align-self: flex-start;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+.brain-msg-attachment-badge:hover {
+  background: rgba(99, 102, 241, 0.22);
+  border-color: var(--color-primary-400);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.brain-msg-attachment-badge-icon {
+  color: var(--color-accent-400);
+  display: flex;
+  align-items: center;
+}
+
+.brain-msg-attachment-badge-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.brain-msg-attachment-badge-tag {
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  background: rgba(6, 182, 212, 0.2);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  border-radius: 4px;
+  color: var(--color-accent-400);
+  font-weight: 700;
+}
+
 
 /* Reasoning Process */
 .brain-msg-reasoning-box {
@@ -350,6 +396,12 @@
 
 .brain-chat-input-container:focus-within {
   border-color: var(--color-primary-500);
+}
+
+.brain-chat-input-container--drag-active {
+  border-color: var(--color-primary-400) !important;
+  background: rgba(99, 102, 241, 0.08) !important;
+  box-shadow: 0 0 24px rgba(99, 102, 241, 0.35) !important;
 }
 
 .brain-chat-input-row {

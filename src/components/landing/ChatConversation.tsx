@@ -11,18 +11,26 @@ import {
   DownloadIcon,
   MaximizeIcon,
   CloseIcon,
+  PaperclipIcon,
+  FileTextIcon,
 } from '../icons'
-import type { ChatSession, User } from '../../types'
+import type { ChatSession, User, DocumentItem } from '../../types'
 import { UserAvatar } from '../ui/Avatar'
+import { createDocumentFromFile } from '../../utils'
 import './ChatConversation.css'
 
 interface ChatConversationProps {
   chat: ChatSession
   currentUser: User
-  onSendMessage: (text: string) => void
+  onSendMessage: (text: string, attachedDoc?: DocumentItem | null) => void
   onBackToNewChat: () => void
   isLoading?: boolean
   onRefreshHistory?: () => void
+  attachedDoc?: DocumentItem | null
+  onRemoveAttachedDoc?: () => void
+  onOpenUploadModal?: () => void
+  onAttachDoc?: (doc: DocumentItem) => void
+  onSelectDocument?: (doc: DocumentItem) => void
 }
 
 export const ChatConversation: React.FC<ChatConversationProps> = ({
@@ -32,8 +40,15 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
   onBackToNewChat,
   isLoading = false,
   onRefreshHistory,
+  attachedDoc = null,
+  onRemoveAttachedDoc,
+  onOpenUploadModal,
+  onAttachDoc,
+  onSelectDocument,
 }) => {
   const [inputText, setInputText] = useState('')
+  const [isDragActive, setIsDragActive] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null)
   const [copiedImgId, setCopiedImgId] = useState<string | null>(null)
   const [lightboxImage, setLightboxImage] = useState<string | null>(null)
@@ -104,9 +119,57 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault()
-    if (!inputText.trim() || isLoading) return
-    onSendMessage(inputText.trim())
+    if ((!inputText.trim() && !attachedDoc) || isLoading) return
+    const textToSend =
+      inputText.trim() ||
+      (attachedDoc ? `Please analyze and summarize the attached document: ${attachedDoc.name}` : '')
+    onSendMessage(textToSend, attachedDoc)
     setInputText('')
+  }
+
+  // Handle direct file input through paperclip
+  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      const doc = await createDocumentFromFile(file)
+      onAttachDoc?.(doc)
+    } catch (err) {
+      console.error('[ChatConversation] Failed to process file:', err)
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragActive(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragActive(false)
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragActive(false)
+
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+
+    try {
+      const doc = await createDocumentFromFile(file)
+      onAttachDoc?.(doc)
+    } catch (err) {
+      console.error('[ChatConversation] Drop file error:', err)
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -207,6 +270,25 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
                   </span>
                   <span className="brain-msg-time">{msg.timestamp}</span>
                 </div>
+
+                {/* Attachment badge on user message */}
+                {msg.attachment && (
+                  <div
+                    className="brain-msg-attachment-badge"
+                    onClick={() => {
+                      if (msg.attachedDoc && onSelectDocument) {
+                        onSelectDocument(msg.attachedDoc)
+                      }
+                    }}
+                    title={msg.attachedDoc ? `Click to inspect ${msg.attachment}` : `Attached context: ${msg.attachment}`}
+                  >
+                    <span className="brain-msg-attachment-badge-icon">
+                      <FileTextIcon size={14} />
+                    </span>
+                    <span className="brain-msg-attachment-badge-name">{msg.attachment}</span>
+                    <span className="brain-msg-attachment-badge-tag">Context</span>
+                  </div>
+                )}
 
 
                 {/* Optional Reasoning Collapser */}
@@ -430,13 +512,76 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
 
       {/* Floating Bottom Input Bar */}
       <footer className="brain-chat-footer">
-        <form className="brain-chat-input-container" onSubmit={handleSubmit}>
+        <form
+          className={`brain-chat-input-container ${isDragActive ? 'brain-chat-input-container--drag-active' : ''}`}
+          onSubmit={handleSubmit}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {/* Hidden file input for paperclip */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.docx,.txt,.md,.json,.py,.ts,.tsx,.js,.jsx,.html,.css,.csv,.png,.jpg,.jpeg"
+            style={{ display: 'none' }}
+            onChange={handleFileInputChange}
+            id="chat-hidden-file-input"
+          />
+
+          {/* Attached document chip if present */}
+          {attachedDoc && (
+            <div className="brain-attached-doc-chip" id="chat-attached-doc-chip">
+              <span className="brain-attached-doc-icon">
+                <FileTextIcon size={14} />
+              </span>
+              <span className="brain-attached-doc-name">{attachedDoc.name}</span>
+              <span className="brain-attached-doc-size">({attachedDoc.size})</span>
+              {onRemoveAttachedDoc && (
+                <button
+                  type="button"
+                  className="brain-attached-doc-remove"
+                  onClick={onRemoveAttachedDoc}
+                  title="Remove attachment"
+                  aria-label="Remove attached document"
+                >
+                  <CloseIcon size={12} />
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="brain-chat-input-row">
+            {/* Paperclip attachment button */}
+            <button
+              type="button"
+              className="brain-chat-tool-btn"
+              id="btn-chat-attach-file"
+              onClick={() => {
+                if (fileInputRef.current) {
+                  fileInputRef.current.click()
+                } else if (onOpenUploadModal) {
+                  onOpenUploadModal()
+                }
+              }}
+              title="Attach document or file (PDF, TXT, DOCX, Code, Images)"
+              aria-label="Attach document or file"
+              disabled={isLoading}
+            >
+              <PaperclipIcon size={17} />
+            </button>
+
             <textarea
               ref={textareaRef}
               rows={1}
               id="chat-input-textarea"
-              placeholder={isLoading ? 'Brain AI is generating a response...' : `Ask about ${chat.title}...`}
+              placeholder={
+                isLoading
+                  ? 'Brain AI is generating a response...'
+                  : attachedDoc
+                    ? `Ask about ${attachedDoc.name}...`
+                    : `Ask about ${chat.title} or drop files here...`
+              }
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -448,7 +593,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
               type="submit"
               className="brain-chat-send-btn"
               id="btn-chat-send"
-              disabled={!inputText.trim() || isLoading}
+              disabled={(!inputText.trim() && !attachedDoc) || isLoading}
               aria-label="Send message"
             >
               {isLoading ? (

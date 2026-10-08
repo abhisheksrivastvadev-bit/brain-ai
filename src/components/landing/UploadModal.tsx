@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { UploadCloudIcon, CloseIcon } from '../icons'
 import type { DocumentItem } from '../../types'
+import { createDocumentFromFile } from '../../utils'
 import './UploadModal.css'
 
 interface UploadModalProps {
@@ -30,18 +31,38 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     }
   }
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processFile(e.dataTransfer.files[0].name, `${Math.round(e.dataTransfer.files[0].size / 1024)} KB`)
+      setIsProcessing(true)
+      try {
+        const doc = await createDocumentFromFile(e.dataTransfer.files[0])
+        setTimeout(() => {
+          setIsProcessing(false)
+          onUploadSuccess(doc)
+          onClose()
+        }, 600)
+      } catch {
+        processFile(e.dataTransfer.files[0].name, `${Math.round(e.dataTransfer.files[0].size / 1024)} KB`)
+      }
     }
   }
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      processFile(e.target.files[0].name, `${Math.round(e.target.files[0].size / 1024)} KB`)
+      setIsProcessing(true)
+      try {
+        const doc = await createDocumentFromFile(e.target.files[0])
+        setTimeout(() => {
+          setIsProcessing(false)
+          onUploadSuccess(doc)
+          onClose()
+        }, 600)
+      } catch {
+        processFile(e.target.files[0].name, `${Math.round(e.target.files[0].size / 1024)} KB`)
+      }
     }
   }
 
@@ -61,7 +82,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setIsProcessing(false)
       onUploadSuccess(newDoc)
       onClose()
-    }, 900)
+    }, 700)
   }
 
   const handleManualAdd = () => {

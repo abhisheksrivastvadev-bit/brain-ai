@@ -10,6 +10,8 @@ import {
   TrashIcon,
   CloseIcon,
   SparklesIcon,
+  UploadCloudIcon,
+  FileTextIcon,
 } from '../icons'
 import type { ChatSession, DocumentItem, AppScreen } from '../../types'
 import './Sidebar.css'
@@ -38,6 +40,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectChat,
   onNewChat,
   onDeleteChat,
+  documents = [],
+  selectedDocId = null,
+  onSelectDocument,
+  onOpenUploadModal,
   onOpenSettings,
   isOpenMobile,
   onCloseMobile,
@@ -46,6 +52,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenAuth,
 }) => {
   const [searchQuery, setSearchQuery] = useState('')
+
+  // Filter documents based on search query
+  const filteredDocs = useMemo(() => {
+    if (!searchQuery.trim()) return documents
+    const q = searchQuery.toLowerCase()
+    return documents.filter(
+      (d) =>
+        d.name.toLowerCase().includes(q) ||
+        d.previewSnippet.toLowerCase().includes(q) ||
+        d.topics.some((t) => t.toLowerCase().includes(q))
+    )
+  }, [documents, searchQuery])
 
   // Filter chats based on search query
   const filteredChats = useMemo(() => {
@@ -204,6 +222,65 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                   {filteredChats.length === 0 && (
                     <div className="brain-empty-nav-state">No matching chats</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Section: Documents */}
+              <div className="brain-nav-section" id="section-documents">
+                <div className="brain-section-header">
+                  <span className="brain-section-title">Documents</span>
+                  <div className="brain-section-header-actions">
+                    {documents.length > 0 && (
+                      <span className="brain-section-count">{documents.length}</span>
+                    )}
+                    {onOpenUploadModal && (
+                      <button
+                        type="button"
+                        className="brain-section-add-btn"
+                        id="btn-upload-document"
+                        onClick={onOpenUploadModal}
+                        aria-label="Upload document"
+                        title="Upload document for RAG"
+                      >
+                        <UploadCloudIcon size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="brain-nav-list" role="list">
+                  {filteredDocs.map((doc) => {
+                    const isSelected = selectedDocId === doc.id
+                    return (
+                      <div
+                        key={doc.id}
+                        className={`brain-nav-item brain-doc-nav-item ${isSelected ? 'active' : ''}`}
+                        id={`doc-item-${doc.id}`}
+                        role="listitem"
+                        onClick={() => {
+                          onSelectDocument(doc)
+                          if (isOpenMobile) onCloseMobile()
+                        }}
+                      >
+                        <span className="brain-nav-item-icon brain-doc-icon-badge">
+                          <FileTextIcon size={16} />
+                        </span>
+                        <div className="brain-nav-item-content">
+                          <span className="brain-nav-item-title">{doc.name}</span>
+                          <span className="brain-nav-item-sub">
+                            {doc.size} • {doc.pages} pgs
+                          </span>
+                        </div>
+                        <span className="brain-doc-status-badge">RAG</span>
+                      </div>
+                    )
+                  })}
+
+                  {filteredDocs.length === 0 && (
+                    <div className="brain-empty-nav-state">
+                      {searchQuery ? 'No matching documents' : 'No documents added'}
+                    </div>
                   )}
                 </div>
               </div>

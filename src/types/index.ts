@@ -35,6 +35,8 @@ export interface ChatMessage {
   images?: string[]
   reasoning?: string
   tags?: string[]
+  attachment?: string
+  attachedDoc?: DocumentItem
 }
 
 export interface ChatSession {
@@ -63,6 +65,7 @@ export interface DocumentItem {
   uploadedAt: string
   previewSnippet: string
   topics: string[]
+  fileUrl?: string
 }
 
 export interface AppSettings {

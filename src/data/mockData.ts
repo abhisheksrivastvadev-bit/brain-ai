@@ -1,4 +1,4 @@
-import type { User } from '../types'
+import type { User, DocumentItem } from '../types'
 
 export const CURRENT_USER: User = {
   id: 'usr_abhishek_01',
@@ -144,30 +144,30 @@ export const CURRENT_USER: User = {
 //   },
 // ]
 
-// export const INITIAL_DOCUMENTS: DocumentItem[] = [
-//   {
-//     id: 'doc_resume',
-//     name: 'Resume.pdf',
-//     size: '142 KB',
-//     pages: 2,
-//     type: 'application/pdf',
-//     uploadedAt: 'Sep 26, 2026',
-//     previewSnippet:
-//       'Abhishek Srivastva — Staff Software Engineer & AI Architect.\nExpertise: React, TypeScript, Python, LLM orchestration, RAG pipelines, distributed systems.\nSelected Experience: Built high-throughput intelligence platforms, low-latency microservices, and design systems.',
-//     topics: ['Full-Stack', 'AI Systems', 'System Design', 'TypeScript', 'Python'],
-//   },
-//   {
-//     id: 'doc_project',
-//     name: 'Project.pdf',
-//     size: '2.4 MB',
-//     pages: 18,
-//     type: 'application/pdf',
-//     uploadedAt: 'Sep 25, 2026',
-//     previewSnippet:
-//       'Brain AI Project Specification Document — Version 2.4.\nExecutive Summary: Next-generation cognitive workspace featuring multi-modal agent interaction, contextual vector search across user documents, and modular design token architecture.',
-//     topics: ['Architecture', 'Vector Database', 'API Gateway', 'Multi-tenant RAG'],
-//   },
-// ]
+export const INITIAL_DOCUMENTS: DocumentItem[] = [
+  {
+    id: 'doc_resume',
+    name: 'Resume.pdf',
+    size: '142 KB',
+    pages: 2,
+    type: 'application/pdf',
+    uploadedAt: 'Sep 26, 2026',
+    previewSnippet:
+      'Abhishek Srivastva — Staff Software Engineer & AI Architect.\nExpertise: React, TypeScript, Python, LLM orchestration, RAG pipelines, distributed systems.\nSelected Experience: Built high-throughput intelligence platforms, low-latency microservices, and design systems.',
+    topics: ['Full-Stack', 'AI Systems', 'System Design', 'TypeScript', 'Python'],
+  },
+  {
+    id: 'doc_project',
+    name: 'Project.pdf',
+    size: '2.4 MB',
+    pages: 18,
+    type: 'application/pdf',
+    uploadedAt: 'Sep 25, 2026',
+    previewSnippet:
+      'Brain AI Project Specification Document — Version 2.4.\nExecutive Summary: Next-generation cognitive workspace featuring multi-modal agent interaction, contextual vector search across user documents, and modular design token architecture.',
+    topics: ['Architecture', 'Vector Database', 'API Gateway', 'Multi-tenant RAG'],
+  },
+]
 
 export const QUICK_PROMPTS = [
   {

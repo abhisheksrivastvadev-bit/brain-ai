@@ -17,6 +17,7 @@ import {
 } from '../../services'
 import { useTheme } from '../../hooks'
 import { STORAGE_KEYS } from '../../constants/app.constants'
+import { INITIAL_DOCUMENTS } from '../../data/mockData'
 import './LandingPage.css'
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -71,9 +72,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [activeChatId, setActiveChatId] = useState<string | null>(() => dataManager.getActiveSessionId())
   const [isSending, setIsSending] = useState(false)
 
-  // Documents state
-  const [documents, setDocuments] = useState<DocumentItem[]>([])
+  // Documents state (persisted in localStorage or initialized with INITIAL_DOCUMENTS)
+  const [documents, setDocuments] = useState<DocumentItem[]>(() => {
+    try {
+      const savedDocs = localStorage.getItem('brain_ai_documents')
+      if (savedDocs) {
+        return JSON.parse(savedDocs)
+      }
+    } catch (e) {
+      console.warn('[LandingPage] Failed to parse saved documents:', e)
+    }
+    return INITIAL_DOCUMENTS
+  })
   const [selectedDocForModal, setSelectedDocForModal] = useState<DocumentItem | null>(null)
+  const [attachedDocForPrompt, setAttachedDocForPrompt] = useState<DocumentItem | null>(null)
+
+  // Persist documents in localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('brain_ai_documents', JSON.stringify(documents))
+    } catch (e) {
+      console.warn('[LandingPage] Failed to save documents to localStorage:', e)
+    }
+  }, [documents])
 
   // Modals state
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
@@ -196,6 +217,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const handleNewChat = () => {
     setActiveChatId(null)
     dataManager.setActiveSessionId(null)
+    setAttachedDocForPrompt(null)
   }
 
   // Handler: Select existing chat
@@ -312,8 +334,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   //    Payload: { user_id?: currentUserId, session_id: sessionId, message: promptText, system_prompt?: ... }
   // 2. API 2: GET /api/chat/history/{sessionId}?user_id={user_id}
   // 3. API 1: GET /api/chat/history?user_id={user_id} (syncs sidebar sessions)
-  const handleSendMessage = async (text: string) => {
-    if (!text.trim()) return
+  const handleSendMessage = async (text: string, attachedDocParam?: DocumentItem | null) => {
+    const docToAttach = attachedDocParam !== undefined ? attachedDocParam : attachedDocForPrompt
+    if (!text.trim() && !docToAttach) return
     if (isSending) return
 
     // Dynamic session ID:
@@ -328,7 +351,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       isNewChatSession = true
     }
 
-    const promptText = text.trim()
+    const promptText =
+      text.trim() ||
+      (docToAttach ? `Please analyze and summarize the attached document: ${docToAttach.name}` : '')
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
     const userMsg: ChatMessage = {
@@ -336,7 +361,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       sender: 'user',
       content: promptText,
       timestamp: now,
+      attachment: docToAttach ? docToAttach.name : undefined,
+      attachedDoc: docToAttach || undefined,
     }
+
+    // Clear attached document after queueing message
+    setAttachedDocForPrompt(null)
 
     const effectiveUserId =
       currentUserId ||
@@ -385,9 +415,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     try {
       const system_prompt_for_api = settings.systemPrompt?.trim() || undefined
 
+      // Prepare message content including document context for RAG / reasoning
+      let messageForApi = promptText
+      if (docToAttach) {
+        const docHeader = `[Attached Document: ${docToAttach.name} (${docToAttach.size})]`
+        const docContext = docToAttach.previewSnippet ? `\nContext: ${docToAttach.previewSnippet}` : ''
+        messageForApi = `${docHeader}${docContext}\n\n${promptText}`
+      }
+
       // 1. Send message to Chat API: POST /api/chat/
       const chatRes = await chatService.sendMessage(
-        promptText,
+        messageForApi,
         system_prompt_for_api,
         sessionId,
         effectiveUserId
@@ -495,14 +533,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   }
 
   // Handler: "Chat with this document" from Document Modal
-  const handleChatWithDocument = () => {
-    setActiveChatId(null)
-    dataManager.setActiveSessionId(null)
+  const handleChatWithDocument = (doc: DocumentItem) => {
+    setAttachedDocForPrompt(doc)
+    setSelectedDocForModal(null)
   }
 
   // Handler: Add newly uploaded document to Documents list
   const handleUploadSuccess = (newDoc: DocumentItem) => {
-    setDocuments((prev) => [newDoc, ...prev])
+    setDocuments((prev) => {
+      const exists = prev.some((d) => d.id === newDoc.id || d.name === newDoc.name)
+      return exists ? prev : [newDoc, ...prev]
+    })
+    setAttachedDocForPrompt(newDoc)
   }
 
   // Intercept navigation to 'login' and 'register' to open popup modal instead of screen
@@ -565,10 +607,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               onBackToNewChat={handleNewChat}
               isLoading={isSending || isLoadingMessages}
               onRefreshHistory={handleRefreshHistory}
+              attachedDoc={attachedDocForPrompt}
+              onRemoveAttachedDoc={() => setAttachedDocForPrompt(null)}
+              onOpenUploadModal={() => setIsUploadModalOpen(true)}
+              onAttachDoc={(doc) => {
+                setDocuments((prev) => (prev.some((d) => d.name === doc.name) ? prev : [doc, ...prev]))
+                setAttachedDocForPrompt(doc)
+              }}
+              onSelectDocument={handleSelectDocument}
             />
           ) : (
             <HeroPrompt
               onSendMessage={handleSendMessage}
+              attachedDoc={attachedDocForPrompt}
+              onRemoveAttachedDoc={() => setAttachedDocForPrompt(null)}
+              onOpenUploadModal={() => setIsUploadModalOpen(true)}
+              onAttachDoc={(doc) => {
+                setDocuments((prev) => (prev.some((d) => d.name === doc.name) ? prev : [doc, ...prev]))
+                setAttachedDocForPrompt(doc)
+              }}
               activeModel={settings.model}
               isLoading={isSending}
             />
