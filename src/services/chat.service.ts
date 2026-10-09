@@ -2,16 +2,18 @@
  * Brain AI - Chat & History Service
  * Connects to:
  * 1. POST /api/chat/
+ *    Headers: Authorization: Bearer <jwt_token>
  *    Payload:
  *    {
- *      "user_id": "string", (optional, included if user logged in)
  *      "session_id": "string",
  *      "message": "string",
  *      "system_prompt": "string" (optional)
  *    }
- * 2. API 1: GET /api/chat/history?user_id={user_id}
+ * 2. API 1: GET /api/chat/history
+ *    Headers: Authorization: Bearer <jwt_token>
  *    For all conversation history to show in the sidebar
- * 3. API 2: GET /api/chat/history/{session_id}?user_id={user_id}
+ * 3. API 2: GET /api/chat/history/{session_id}
+ *    Headers: Authorization: Bearer <jwt_token>
  *    For messages in a specific conversation session
  */
 
@@ -28,13 +30,7 @@ import type {
 import { dataManager } from '../utils/dataManager'
 import { authService } from './auth.service'
 
-// Base URL: In dev, '/api' proxies to http://127.0.0.1:8000/api in vite.config.ts
-const envProcess = (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } })?.process
-const API_BASE_URL = (
-  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
-  envProcess?.env?.VITE_API_URL ||
-  '/api'
-).replace(/\/$/, '')
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 /**
  * Formats ISO date/time into friendly relative timestamp (e.g. "Just now", "5m ago", "2h ago", "Yesterday")
@@ -383,20 +379,22 @@ export function parseChatSessionsFromHistory(
 
 function getAuthHeaders(additionalHeaders: Record<string, string> = {}): Record<string, string> {
   const headers: Record<string, string> = { ...additionalHeaders }
-  const token = dataManager.getToken() || authService.getToken()
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
+  const rawToken = dataManager.getToken() || authService.getToken()
+  if (rawToken) {
+    const cleanToken = rawToken.replace(/^Bearer\s+/i, '').trim()
+    if (cleanToken) {
+      headers['Authorization'] = `Bearer ${cleanToken}`
+    }
   }
   return headers
 }
 
 export const chatService = {
   /**
-   * Send chat message: POST http://127.0.0.1:8000/api/chat/
+   * Send chat message: POST /api/chat/ (or https://brain-ai-qeat.vercel.app/api/chat/)
    *
    * Request payload:
    * {
-   *   "user_id": "string", // optional, sent if user is logged in
    *   "session_id": "string",
    *   "message": "string",
    *   "system_prompt": "string" // optional
@@ -406,14 +404,12 @@ export const chatService = {
     message: string,
     system_prompt?: string,
     sessionId?: string,
-    userId?: string
+    _userId?: string
   ): Promise<ChatPostResponse> {
     const targetSessionId = sessionId && sessionId.trim() ? sessionId.trim() : dataManager.generateSessionId()
-    const targetUserId = userId !== undefined ? (userId || undefined) : (dataManager.getUserId() || undefined)
 
     const url = `${API_BASE_URL}/chat/`
     const payload: ChatPostRequest = {
-      ...(targetUserId ? { user_id: targetUserId } : {}),
       session_id: targetSessionId,
       message,
       ...(system_prompt ? { system_prompt } : {}),
@@ -449,16 +445,10 @@ export const chatService = {
 
   /**
    * API 1: Fetch all conversation history for sidebar display
-   * GET http://127.0.0.1:8000/api/chat/history?user_id=646a2b1b-0810-4826-9fbe-6c9dc334d965
+   * GET /api/chat/history (or https://brain-ai-qeat.vercel.app/api/chat/history)
    */
-  async getConversations(userId?: string): Promise<ConversationListResponse> {
-    const resolvedUserId = userId || dataManager.getUserId() || 'guest'
-
-    const queryParams = new URLSearchParams({
-      user_id: resolvedUserId,
-    })
-
-    const url = `${API_BASE_URL}/chat/history?${queryParams.toString()}`
+  async getConversations(_userId?: string): Promise<ConversationListResponse> {
+    const url = `${API_BASE_URL}/chat/history`
 
     try {
       const response = await fetch(url, {
@@ -488,17 +478,11 @@ export const chatService = {
 
   /**
    * API 2: Fetch history based on session
-   * GET http://127.0.0.1:8000/api/chat/history/{session_id}?user_id=646a2b1b-0810-4826-9fbe-6c9dc334d965
+   * GET /api/chat/history/{session_id} (or https://brain-ai-qeat.vercel.app/api/chat/history/{session_id})
    */
-  async getSessionMessages(sessionId: string, userId?: string): Promise<SessionHistoryResponse> {
-    const resolvedUserId = userId || dataManager.getUserId() || 'guest'
-
-    const queryParams = new URLSearchParams({
-      user_id: resolvedUserId,
-    })
-
+  async getSessionMessages(sessionId: string, _userId?: string): Promise<SessionHistoryResponse> {
     const encodedSessionId = encodeURIComponent(sessionId)
-    const url = `${API_BASE_URL}/chat/history/${encodedSessionId}?${queryParams.toString()}`
+    const url = `${API_BASE_URL}/chat/history/${encodedSessionId}`
 
     try {
       const response = await fetch(url, {
@@ -531,12 +515,10 @@ export const chatService = {
    * If sessionId is provided, fetches session messages (API 2).
    * Otherwise, fetches all conversations (API 1).
    */
-  async getChatHistory(sessionId?: string, userId?: string): Promise<ConversationListResponse> {
-    const resolvedUserId = userId || dataManager.getUserId() || 'guest'
-
+  async getChatHistory(sessionId?: string, _userId?: string): Promise<ConversationListResponse> {
     if (sessionId) {
       try {
-        const sessionRes = await this.getSessionMessages(sessionId, resolvedUserId)
+        const sessionRes = await this.getSessionMessages(sessionId)
         const messages = sessionRes.data?.messages || []
         return {
           success: sessionRes.success,
@@ -551,17 +533,17 @@ export const chatService = {
       }
     }
 
-    return this.getConversations(resolvedUserId)
+    return this.getConversations()
   },
 
   /**
-   * Ask chat and sync history dynamically based on targetSessionId and userId
+   * Ask chat and sync history dynamically based on targetSessionId
    */
   async askChatAndSync(
     message: string,
     system_prompt?: string,
     sessionId?: string,
-    userId?: string
+    _userId?: string
   ): Promise<{
     chatResponse: ChatPostResponse
     sessionResponse: SessionHistoryResponse
@@ -569,13 +551,12 @@ export const chatService = {
     sessionId: string
   }> {
     const targetSessionId = sessionId && sessionId.trim() ? sessionId.trim() : dataManager.generateSessionId()
-    const resolvedUserId = userId !== undefined ? (userId || undefined) : (dataManager.getUserId() || undefined)
 
     // 1. Post message to chat API
-    const chatResponse = await this.sendMessage(message, system_prompt, targetSessionId, resolvedUserId)
+    const chatResponse = await this.sendMessage(message, system_prompt, targetSessionId)
 
     // 2. Fetch updated session messages from API 2
-    const sessionResponse = await this.getSessionMessages(targetSessionId, resolvedUserId)
+    const sessionResponse = await this.getSessionMessages(targetSessionId)
 
     // 3. Map conversation to ChatMessage[]
     const messageItems = sessionResponse.data?.messages || []

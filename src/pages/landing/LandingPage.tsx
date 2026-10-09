@@ -91,27 +91,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       console.warn('[LandingPage] Failed to save settings to localStorage:', err)
     }
   }
-
-  const currentUserId =
-    dataManager.getUserId() ||
-    (user && user.role !== 'guest' ? (user.user_id || (user.id?.startsWith('usr_guest') ? null : user.id)) : null) ||
-    null
-
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
 
-  // Pre-load conversation history dynamically based on real logged-in user_id
+  // Pre-load conversation history dynamically based on JWT token session
   useEffect(() => {
     let isMounted = true
 
     const loadUserHistory = async () => {
-      const effectiveUserId =
-        currentUserId ||
-        dataManager.getUserId() ||
-        (user && user.role !== 'guest' ? (user.user_id || (user.id?.startsWith('usr_guest') ? null : user.id)) : null) ||
-        null
+      const token = dataManager.getToken() || authService.getToken()
+      const isUserLoggedIn = Boolean(token || (user && user.role !== 'guest'))
 
       // If user is not logged in, reset chats
-      if (!effectiveUserId) {
+      if (!isUserLoggedIn) {
         if (isMounted) {
           setChats([])
           setActiveChatId(null)
@@ -121,13 +112,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       }
 
       try {
-        // API 1: Fetch all conversations for sidebar display
-        // GET /api/chat/history?user_id={effectiveUserId}
-        const res = await chatService.getConversations(effectiveUserId)
+        // API 1: Fetch all conversations for sidebar display: GET /api/chat/history
+        const res = await chatService.getConversations()
         if (!isMounted) return
 
         const conversationData = res?.data?.conversation
-        const parsedSessions = parseChatSessionsFromHistory(conversationData, new Date(), effectiveUserId)
+        const parsedSessions = parseChatSessionsFromHistory(conversationData, new Date())
 
         if (parsedSessions.length > 0 && isMounted) {
           // Sort newest sessions at the top based on updatedAtRaw
@@ -139,7 +129,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           // Sync all session IDs to dataManager
           for (const s of orderedSessions) {
-            dataManager.saveUserSession(s.id, effectiveUserId)
+            dataManager.saveUserSession(s.id)
           }
 
           // Determine which session should be active
@@ -151,10 +141,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           dataManager.setActiveSessionId(targetSession.id)
           setChats(orderedSessions)
 
-          // API 2: Fetch full messages for the active session
-          // GET /api/chat/history/{session_id}?user_id={effectiveUserId}
+          // API 2: Fetch full messages for the active session: GET /api/chat/history/{session_id}
           try {
-            const sessionRes = await chatService.getSessionMessages(targetSession.id, effectiveUserId)
+            const sessionRes = await chatService.getSessionMessages(targetSession.id)
             if (isMounted && sessionRes?.data?.messages) {
               const fullMessages = mapHistoryToMessages(
                 sessionRes.data.messages,
@@ -187,7 +176,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     return () => {
       isMounted = false
     }
-  }, [currentUserId, user])
+  }, [user])
 
   // Currently active chat session
   const activeChat = chats.find((c) => c.id === activeChatId) || null
@@ -204,21 +193,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     dataManager.setActiveSessionId(chatId)
     setIsMobileSidebarOpen(false)
 
-    const effectiveUserId =
-      currentUserId ||
-      dataManager.getUserId() ||
-      (user && user.role !== 'guest' ? (user.user_id || (user.id?.startsWith('usr_guest') ? null : user.id)) : null) ||
-      null
+    const token = dataManager.getToken() || authService.getToken()
+    const isUserLoggedIn = Boolean(token || (user && user.role !== 'guest'))
 
-    if (effectiveUserId) {
+    if (isUserLoggedIn) {
       const target = chats.find((c) => c.id === chatId)
       if (!target || target.messages.length === 0) {
         setIsLoadingMessages(true)
       }
       try {
-        // API 2: Fetch conversation messages for selected session
-        // GET /api/chat/history/{chatId}?user_id={effectiveUserId}
-        const sessionRes = await chatService.getSessionMessages(chatId, effectiveUserId)
+        // API 2: Fetch conversation messages for selected session: GET /api/chat/history/{chatId}
+        const sessionRes = await chatService.getSessionMessages(chatId)
         if (sessionRes?.data?.messages) {
           const loadedMessages = mapHistoryToMessages(
             sessionRes.data.messages,
@@ -249,20 +234,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       setActiveChatId(null)
       dataManager.setActiveSessionId(null)
     }
-    if (currentUserId) {
-      dataManager.removeUserSession(chatId, currentUserId)
-    }
+    dataManager.removeUserSession(chatId)
   }
 
   // Handler: Refresh conversation history dynamically from backend
   const handleRefreshHistory = useCallback(async () => {
     const sessionId = activeChatId
-    const effectiveUserId = currentUserId || dataManager.getUserId() || undefined
     if (!sessionId) return
     setIsSending(true)
     try {
       // 1. Fetch latest messages for active session (API 2)
-      const sessionRes = await chatService.getSessionMessages(sessionId, effectiveUserId)
+      const sessionRes = await chatService.getSessionMessages(sessionId)
       if (sessionRes?.data?.messages) {
         const syncedMessages = mapHistoryToMessages(
           sessionRes.data.messages,
@@ -283,10 +265,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       }
 
       // 2. Sync sidebar conversation list in background (API 1)
-      if (effectiveUserId) {
-        const convRes = await chatService.getConversations(effectiveUserId)
+      const token = dataManager.getToken() || authService.getToken()
+      if (token || (user && user.role !== 'guest')) {
+        const convRes = await chatService.getConversations()
         if (convRes?.data?.conversation) {
-          const parsed = parseChatSessionsFromHistory(convRes.data.conversation, new Date(), effectiveUserId)
+          const parsed = parseChatSessionsFromHistory(convRes.data.conversation, new Date())
           if (parsed.length > 0) {
             setChats((prev) =>
               parsed.map((p) => {
@@ -304,14 +287,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     } finally {
       setIsSending(false)
     }
-  }, [activeChatId, currentUserId])
+  }, [activeChatId, user])
 
   // Handler: Send message (both in landing hero and active conversation)
   // Executes:
-  // 1. POST /api/chat/
-  //    Payload: { user_id?: currentUserId, session_id: sessionId, message: promptText, system_prompt?: ... }
-  // 2. API 2: GET /api/chat/history/{sessionId}?user_id={user_id}
-  // 3. API 1: GET /api/chat/history?user_id={user_id} (syncs sidebar sessions)
+  // Executes:
+  // 1. POST /api/chat/ (Headers: Authorization: Bearer <token>)
+  // 2. API 2: GET /api/chat/history/{sessionId}
+  // 3. API 1: GET /api/chat/history (syncs sidebar sessions)
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return
     if (isSending) return
@@ -338,15 +321,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       timestamp: now,
     }
 
-    const effectiveUserId =
-      currentUserId ||
-      dataManager.getUserId() ||
-      (user && user.role !== 'guest' ? (user.user_id || (user.id?.startsWith('usr_guest') ? null : user.id)) : null) ||
-      undefined
-
     // Persist new session ID in user's saved sessions list
-    if (effectiveUserId && isNewChatSession) {
-      dataManager.saveUserSession(sessionId, effectiveUserId)
+    if (isNewChatSession) {
+      dataManager.saveUserSession(sessionId)
     }
 
     // Optimistically show user message and set active chat
@@ -385,18 +362,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     try {
       const system_prompt_for_api = settings.systemPrompt?.trim() || undefined
 
-      // 1. Send message to Chat API: POST /api/chat/
+      // 1. Send message to Chat API: POST /api/chat/ (Authorization Bearer token header)
       const chatRes = await chatService.sendMessage(
         promptText,
         system_prompt_for_api,
-        sessionId,
-        effectiveUserId
+        sessionId
       )
 
-      // 2. Fetch updated messages: API 2 GET /api/chat/history/{sessionId}?user_id={user_id}
+      // 2. Fetch updated messages: API 2 GET /api/chat/history/{sessionId}
       let syncedMessages: ChatMessage[] = []
       try {
-        const sessionRes = await chatService.getSessionMessages(sessionId, effectiveUserId)
+        const sessionRes = await chatService.getSessionMessages(sessionId)
         if (sessionRes?.data?.messages && sessionRes.data.messages.length > 0) {
           syncedMessages = mapHistoryToMessages(sessionRes.data.messages, new Date(), sessionId)
         }
@@ -447,12 +423,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         )
       }
 
-      // 3. Sync sidebar conversation list in background: API 1 GET /api/chat/history?user_id={user_id}
-      if (effectiveUserId) {
+      // 3. Sync sidebar conversation list in background: API 1 GET /api/chat/history
+      const token = dataManager.getToken() || authService.getToken()
+      if (token || (user && user.role !== 'guest')) {
         try {
-          const convRes = await chatService.getConversations(effectiveUserId)
+          const convRes = await chatService.getConversations()
           if (convRes?.data?.conversation) {
-            const parsed = parseChatSessionsFromHistory(convRes.data.conversation, new Date(), effectiveUserId)
+            const parsed = parseChatSessionsFromHistory(convRes.data.conversation, new Date())
             if (parsed.length > 0) {
               setChats((prev) =>
                 parsed.map((p) => {
@@ -474,13 +451,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       const errorAssistantMsg: ChatMessage = {
         id: `msg_err_${Date.now()}`,
         sender: 'assistant',
-        content: `⚠️ **Connection Error**\n\nCould not reach the Brain AI backend at http://127.0.0.1:8000.\n- **Details**: \`${errorMsg}\`\n\nPlease ensure \`python run.py\` is running.`,
+        content: `⚠️ **Connection Error**\n\nCould not reach the Brain AI backend.\n- **Details**: \`${errorMsg}\`\n\nPlease verify that the backend server is reachable.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }
       setChats((prev) =>
         prev.map((c) =>
           c.id === sessionId
-            ? { ...c, messages: [...c.messages, errorAssistantMsg], updatedAt: 'Just now' }
+            ? { ...c, messages: [...c.messages], updatedAt: 'Just now' }
             : c
         )
       )

@@ -17,10 +17,7 @@ import {
   type JwtPayload,
 } from '../utils/dataManager'
 
-const API_BASE_URL = (
-  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
-  '/api'
-).replace(/\/$/, '')
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 export { parseJwt, isTokenValid, getTokenRemainingTime, dispatchAuthStateChange, type JwtPayload }
 
@@ -126,35 +123,19 @@ export const authService = {
       if (response.ok) {
         const data = await response.json()
 
-        // Extract token from top-level or user object
-        const rawToken =
-          data.user?.access_token ||
-          data.access_token ||
-          data.token ||
-          data.user?.token ||
-          ''
-
-        // Extract real user_id from database response or JWT sub
-        const jwtPayload = rawToken ? parseJwt(rawToken) : null
-        const realUserId = String(
-          data.user?.user_id ||
-          jwtPayload?.sub ||
-          data.user?.id ||
-          data.user?._id ||
-          ''
-        )
+        const token = data.user?.access_token || ''
 
         const user: User = {
-          id: realUserId || 'usr_' + Date.now(),
-          user_id: realUserId || undefined,
+          id: data.user?.user_id || 'usr_' + Date.now(),
+          user_id: data.user?.user_id,
           name: data.user?.name || email.trim().split('@')[0],
           email: data.user?.email || email.trim(),
           role: data.user?.role || 'user',
-          token: rawToken || undefined,
+          token,
         }
 
-        if (rawToken) {
-          dataManager.setToken(rawToken, rememberMe)
+        if (token) {
+          dataManager.setToken(token, rememberMe)
         }
         dataManager.setUserData(user, rememberMe)
 
@@ -162,8 +143,8 @@ export const authService = {
           success: true,
           message: data.message || 'Login successful',
           user,
-          token: rawToken,
-          access_token: rawToken,
+          token,
+          access_token: token,
         }
       } else {
         const errData = await response.json().catch(() => null)
@@ -223,33 +204,19 @@ export const authService = {
       if (response.ok) {
         const data = await response.json()
 
-        const rawToken =
-          data.user?.access_token ||
-          data.access_token ||
-          data.token ||
-          data.user?.token ||
-          ''
-
-        const jwtPayload = rawToken ? parseJwt(rawToken) : null
-        const realUserId = String(
-          data.user?.user_id ||
-          jwtPayload?.sub ||
-          data.user?.id ||
-          data.user?._id ||
-          ''
-        )
+        const token = data.user?.access_token || ''
 
         const user: User = {
-          id: realUserId || 'usr_' + Date.now(),
-          user_id: realUserId || undefined,
+          id: data.user?.user_id || 'usr_' + Date.now(),
+          user_id: data.user?.user_id,
           name: data.user?.name || name.trim(),
           email: data.user?.email || email.trim().toLowerCase(),
           role: data.user?.role || 'user',
-          token: rawToken || undefined,
+          token,
         }
 
-        if (rawToken) {
-          dataManager.setToken(rawToken, true)
+        if (token) {
+          dataManager.setToken(token, true)
         }
         dataManager.setUserData(user, true)
 
@@ -257,8 +224,8 @@ export const authService = {
           success: true,
           message: data.message || 'Account created successfully!',
           user,
-          token: rawToken,
-          access_token: rawToken,
+          token,
+          access_token: token,
         }
       } else {
         const errData = await response.json().catch(() => null)

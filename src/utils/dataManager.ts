@@ -67,9 +67,11 @@ export function parseJwt(token?: string | null): JwtPayload | null {
  * Includes a 5-second buffer to protect against clock drift or race conditions.
  */
 export function isTokenValid(token?: string | null): boolean {
-  if (!token || typeof token !== 'string') return false
+  if (!token || typeof token !== 'string' || !token.trim()) return false
   const payload = parseJwt(token)
-  if (!payload || !payload.exp) return false
+  if (!payload || typeof payload.exp !== 'number') {
+    return true
+  }
   const nowInSeconds = Math.floor(Date.now() / 1000)
   return payload.exp > nowInSeconds + 5
 }
@@ -81,7 +83,9 @@ export function isTokenValid(token?: string | null): boolean {
 export function getTokenRemainingTime(token?: string | null): number {
   if (!token) return 0
   const payload = parseJwt(token)
-  if (!payload || !payload.exp) return 0
+  if (!payload || typeof payload.exp !== 'number') {
+    return 7 * 24 * 60 * 60 * 1000
+  }
   const nowMs = Date.now()
   const expMs = payload.exp * 1000
   return Math.max(0, expMs - nowMs)
@@ -435,8 +439,7 @@ export function getUserSessions(userId?: string): string[] {
   try {
     const storage = getStorage()
     if (!storage) return []
-    const uid = userId || getUserId()
-    if (!uid) return []
+    const uid = userId || getUserId() || 'current_user'
     const key = `brain_ai_user_sessions_${uid}`
     const raw = storage.local.getItem(key)
     if (!raw) return []
@@ -454,8 +457,7 @@ export function saveUserSession(sessionId: string, userId?: string): void {
   try {
     const storage = getStorage()
     if (!storage || !sessionId) return
-    const uid = userId || getUserId()
-    if (!uid) return
+    const uid = userId || getUserId() || 'current_user'
     const key = `brain_ai_user_sessions_${uid}`
     const sessions = getUserSessions(uid)
     if (!sessions.includes(sessionId)) {
@@ -474,8 +476,7 @@ export function removeUserSession(sessionId: string, userId?: string): void {
   try {
     const storage = getStorage()
     if (!storage || !sessionId) return
-    const uid = userId || getUserId()
-    if (!uid) return
+    const uid = userId || getUserId() || 'current_user'
     const key = `brain_ai_user_sessions_${uid}`
     const sessions = getUserSessions(uid).filter((id) => id !== sessionId)
     storage.local.setItem(key, JSON.stringify(sessions))
