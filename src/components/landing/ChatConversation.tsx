@@ -144,7 +144,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
             <span className="brain-session-badge-label">Session:</span>
             <strong>{chat.id}</strong>
           </div>
-          {onRefreshHistory && (
+          {/* {onRefreshHistory && (
             <button
               type="button"
               className="brain-chat-sync-btn"
@@ -156,7 +156,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
               <RefreshIcon size={13} className={isLoading ? 'brain-spin' : ''} />
               <span>Sync History</span>
             </button>
-          )}
+          )} */}
         </div>
       </header>
 
