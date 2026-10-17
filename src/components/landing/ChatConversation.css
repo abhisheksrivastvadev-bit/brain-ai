@@ -375,6 +375,123 @@
   background: var(--border-subtle);
 }
 
+/* Document attachment in chat conversation input */
+.brain-chat-attach-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.brain-chat-attach-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--bg-surface-elevated);
+  border-color: var(--border-subtle);
+}
+
+.brain-chat-attach-btn--active {
+  color: var(--color-primary-400);
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.brain-chat-attached-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.brain-chat-attached-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: var(--text-primary);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.76rem;
+  max-width: 100%;
+}
+
+.brain-chat-chip-icon {
+  font-size: 0.85rem;
+}
+
+.brain-chat-chip-name {
+  font-weight: 500;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.brain-chat-chip-size {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.brain-chat-chip-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.brain-chat-chip-remove:hover {
+  color: var(--color-error);
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* Document badge in message stream */
+.brain-msg-attached-docs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.brain-msg-doc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+}
+
+.brain-msg-doc-icon {
+  font-size: 0.95rem;
+}
+
+.brain-msg-doc-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.brain-msg-doc-size {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
 .brain-chat-textarea {
   flex: 1;
   border: none;

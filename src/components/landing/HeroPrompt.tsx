@@ -4,11 +4,13 @@ import {
   SparklesIcon,
   RefreshIcon,
   BrainIcon,
+  PaperclipIcon,
+  CloseIcon,
 } from '../icons'
 import './HeroPrompt.css'
 
 interface HeroPromptProps {
-  onSendMessage: (text: string) => void
+  onSendMessage: (text?: string, documents?: File[]) => void
   activeModel?: string
   isLoading?: boolean
 }
@@ -18,7 +20,9 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
   isLoading = false,
 }) => {
   const [inputText, setInputText] = useState('')
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Auto resize textarea
   useEffect(() => {
@@ -30,9 +34,11 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault()
-    if (!inputText.trim() || isLoading) return
-    onSendMessage(inputText.trim())
+    const trimmed = inputText.trim()
+    if ((!trimmed && selectedFiles.length === 0) || isLoading) return
+    onSendMessage(trimmed || undefined, selectedFiles.length > 0 ? selectedFiles : undefined)
     setInputText('')
+    setSelectedFiles([])
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -41,6 +47,21 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
       handleSubmit()
     }
   }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files)
+      setSelectedFiles((prev) => [...prev, ...newFiles])
+      e.target.value = ''
+    }
+  }
+
+  const handleRemoveFile = (indexToRemove: number) => {
+    setSelectedFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove))
+  }
+
+  const hasFiles = selectedFiles.length > 0
+  const canSubmit = (Boolean(inputText.trim()) || hasFiles) && !isLoading
 
   return (
     <div className="brain-hero-landing" id="hero-landing-canvas">
@@ -72,12 +93,42 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
           onSubmit={handleSubmit}
         >
           <div className="brain-prompt-box">
+            {/* Attached file chips */}
+            {hasFiles && (
+              <div className="brain-hero-attached-files">
+                {selectedFiles.map((file, idx) => (
+                  <span key={idx} className="brain-hero-attached-chip">
+                    <span className="brain-hero-chip-icon">📄</span>
+                    <span className="brain-hero-chip-name">{file.name}</span>
+                    <span className="brain-hero-chip-size">
+                      ({Math.round(file.size / 1024)} KB)
+                    </span>
+                    <button
+                      type="button"
+                      className="brain-hero-chip-remove"
+                      onClick={() => handleRemoveFile(idx)}
+                      title="Remove file"
+                      aria-label={`Remove ${file.name}`}
+                    >
+                      <CloseIcon size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div className="brain-prompt-input-row">
               <textarea
                 ref={textareaRef}
                 id="main-prompt-textarea"
                 rows={1}
-                placeholder={isLoading ? 'Sending to Brain AI...' : 'Ask anything...'}
+                placeholder={
+                  isLoading
+                    ? 'Sending to Brain AI...'
+                    : hasFiles
+                    ? 'Ask a question about the document(s) (optional)...'
+                    : 'Ask anything...'
+                }
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -90,6 +141,25 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
             {/* Bottom toolbar within input card */}
             <div className="brain-prompt-toolbar">
               <div className="brain-prompt-tools-left">
+                <button
+                  type="button"
+                  className={`brain-tool-btn ${hasFiles ? 'brain-tool-btn--active' : ''}`}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                  title="Attach document (PDF, TXT, DOCX)"
+                  aria-label="Attach document"
+                >
+                  <PaperclipIcon size={14} />
+                  <span>{hasFiles ? `${selectedFiles.length} file(s)` : 'Attach Document'}</span>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt,.md"
+                  multiple
+                  style={{ display: 'none' }}
+                  onChange={handleFileChange}
+                />
               </div>
 
               <div className="brain-prompt-tools-right">
@@ -97,7 +167,7 @@ export const HeroPrompt: React.FC<HeroPromptProps> = ({
                   type="submit"
                   className="brain-prompt-send-btn"
                   id="btn-prompt-send"
-                  disabled={!inputText.trim() || isLoading}
+                  disabled={!canSubmit}
                   aria-label="Send message"
                 >
                   {isLoading ? (

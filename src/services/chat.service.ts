@@ -1,21 +1,3 @@
-/**
- * Brain AI - Chat & History Service
- * Connects to:
- * 1. POST /api/chat/
- *    Headers: Authorization: Bearer <jwt_token>
- *    Payload:
- *    {
- *      "session_id": "string",
- *      "message": "string",
- *      "system_prompt": "string" (optional)
- *    }
- * 2. API 1: GET /api/chat/history
- *    Headers: Authorization: Bearer <jwt_token>
- *    For all conversation history to show in the sidebar
- * 3. API 2: GET /api/chat/history/{session_id}
- *    Headers: Authorization: Bearer <jwt_token>
- *    For messages in a specific conversation session
- */
 
 import type {
   ChatHistoryItem,
@@ -29,8 +11,11 @@ import type {
 } from '../types'
 import { dataManager } from '../utils/dataManager'
 import { authService } from './auth.service'
+import { askAboutPdf } from './rag.service'
 
+export { askAboutPdf } from './rag.service'
 export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+
 
 /**
  * Formats ISO date/time into friendly relative timestamp (e.g. "Just now", "5m ago", "2h ago", "Yesterday")
@@ -390,16 +375,6 @@ function getAuthHeaders(additionalHeaders: Record<string, string> = {}): Record<
 }
 
 export const chatService = {
-  /**
-   * Send chat message: POST /api/chat/ (or https://brain-ai-qeat.vercel.app/api/chat/)
-   *
-   * Request payload:
-   * {
-   *   "session_id": "string",
-   *   "message": "string",
-   *   "system_prompt": "string" // optional
-   * }
-   */
   async sendMessage(
     message: string,
     system_prompt?: string,
@@ -439,6 +414,94 @@ export const chatService = {
       return data
     } catch (err: unknown) {
       console.error('[chatService.sendMessage] Failed:', err)
+      throw err
+    }
+  },
+
+  /**
+   * Upload PDF document & chat: uses askAboutPdf (/api/rag/query)
+   * Supports optional query message and documents payload.
+   */
+  async sendMessageWithDocuments(
+    message?: string,
+    documents: File[] = [],
+    sessionId?: string,
+    _userId?: string
+  ): Promise<ChatPostResponse> {
+    const targetSessionId = sessionId && sessionId.trim() ? sessionId.trim() : dataManager.generateSessionId()
+    const targetQuery = message && message.trim() ? message.trim() : 'Please summarize this document.'
+
+    // 1. Primary: Use /api/rag/query (askAboutPdf) for querying PDF document
+    if (documents && documents.length > 0) {
+      try {
+        const answer = await askAboutPdf(documents[0], targetQuery)
+        return {
+          message: answer,
+        }
+      } catch (ragErr) {
+        console.warn('[chatService.sendMessageWithDocuments] /api/rag/query fallback to legacy upload:', ragErr)
+      }
+    }
+
+    const url = `${API_BASE_URL}/upload-pdf`
+    const formData = new FormData()
+
+    // 1. Append files (field "file" for single/primary, "files" for list)
+    if (documents && documents.length > 0) {
+      formData.append('file', documents[0])
+      documents.forEach((file) => {
+        formData.append('files', file)
+      })
+    }
+
+    // 2. Message is optional
+    if (message && message.trim()) {
+      formData.append('message', message.trim())
+      formData.append('question', message.trim())
+    }
+
+    if (targetSessionId) {
+      formData.append('session_id', targetSessionId)
+    }
+
+    try {
+      const headers = getAuthHeaders({
+        Accept: 'application/json',
+      })
+      // Omit Content-Type so the browser automatically sets multipart/form-data with boundary
+      delete (headers as Record<string, string>)['Content-Type']
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+      })
+
+      if (response.status === 401) {
+        dataManager.logout()
+        throw new Error('Session expired or unauthorized. Please sign in again.')
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '')
+        throw new Error(`Upload PDF API error (${response.status}): ${errorText || response.statusText}`)
+      }
+
+      const rawData = await response.json()
+      const fallbackMsg = Array.isArray(rawData?.chunks)
+        ? `Document processed successfully (${rawData.chunks.length} chunks generated).`
+        : (rawData?.message || 'Document uploaded and processed successfully.')
+
+      const data: ChatPostResponse = {
+        message: rawData?.message || fallbackMsg,
+        imageUrl: rawData?.image_url || rawData?.imageUrl,
+        image_url: rawData?.image_url || rawData?.imageUrl,
+        images: rawData?.images,
+        ...rawData,
+      }
+      return data
+    } catch (err: unknown) {
+      console.error('[chatService.sendMessageWithDocuments] Failed:', err)
       throw err
     }
   },
@@ -569,6 +632,8 @@ export const chatService = {
       sessionId: targetSessionId,
     }
   },
+
+  askAboutPdf,
 }
 
 export default chatService

@@ -35,6 +35,7 @@ export interface ChatMessage {
   images?: string[]
   reasoning?: string
   tags?: string[]
+  documents?: { name: string; size?: string }[]
 }
 
 export interface ChatSession {

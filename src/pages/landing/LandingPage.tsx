@@ -9,11 +9,13 @@ import { SettingsModal } from '../../components/landing/SettingsModal'
 import type { AppSettings, ChatSession, DocumentItem, ChatMessage, User, AppScreen } from '../../types'
 import {
   chatService,
+  askAboutPdf,
   mapHistoryToMessages,
   parseChatSessionsFromHistory,
   extractCodeBlock,
   extractImages,
   dataManager,
+  authService,
 } from '../../services'
 import { useTheme } from '../../hooks'
 import { STORAGE_KEYS } from '../../constants/app.constants'
@@ -291,12 +293,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   // Handler: Send message (both in landing hero and active conversation)
   // Executes:
-  // Executes:
-  // 1. POST /api/chat/ (Headers: Authorization: Bearer <token>)
-  // 2. API 2: GET /api/chat/history/{sessionId}
-  // 3. API 1: GET /api/chat/history (syncs sidebar sessions)
-  const handleSendMessage = async (text: string) => {
-    if (!text.trim()) return
+  // 1. If documents are selected: calls askAboutPdf (/api/rag/query) with query
+  // 2. If no documents are selected: calls chatService.sendMessage (/chat/)
+  // 3. API 2: GET /api/chat/history/{sessionId}
+  // 4. API 1: GET /api/chat/history (syncs sidebar sessions)
+  const handleSendMessage = async (text?: string, selectedDocuments?: File[]) => {
+    const hasDocuments = Boolean(selectedDocuments && selectedDocuments.length > 0)
+    const promptText = (text || '').trim()
+
+    // If no document is selected, text message is required
+    if (!hasDocuments && !promptText) return
     if (isSending) return
 
     // Dynamic session ID:
@@ -311,14 +317,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       isNewChatSession = true
     }
 
-    const promptText = text.trim()
+    const docLabels = hasDocuments
+      ? selectedDocuments!.map((d) => d.name).join(', ')
+      : ''
+    const displayText = promptText || (hasDocuments ? `[Uploaded: ${docLabels}]` : '')
+    const sessionSummary = promptText || (hasDocuments ? `Document: ${docLabels}` : 'Chat Session')
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
     const userMsg: ChatMessage = {
       id: `msg_u_${Date.now()}`,
       sender: 'user',
-      content: promptText,
+      content: displayText,
       timestamp: now,
+      documents: hasDocuments
+        ? selectedDocuments!.map((d) => ({
+          name: d.name,
+          size: `${Math.round(d.size / 1024)} KB`,
+        }))
+        : undefined,
     }
 
     // Persist new session ID in user's saved sessions list
@@ -336,16 +352,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               ...c,
               messages: [...c.messages, userMsg],
               updatedAt: 'Just now',
-              description: promptText.slice(0, 48),
+              description: sessionSummary.slice(0, 48),
             }
             : c
         )
       }
       const newChat: ChatSession = {
         id: sessionId,
-        title: promptText.slice(0, 24) + (promptText.length > 24 ? '...' : ''),
-        icon: 'default',
-        description: promptText.slice(0, 48),
+        title: sessionSummary.slice(0, 24) + (sessionSummary.length > 24 ? '...' : ''),
+        icon: hasDocuments ? 'rag' : 'default',
+        description: sessionSummary.slice(0, 48),
         updatedAt: 'Just now',
         messages: [userMsg],
       }
@@ -362,22 +378,49 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     try {
       const system_prompt_for_api = settings.systemPrompt?.trim() || undefined
 
-      // 1. Send message to Chat API: POST /api/chat/ (Authorization Bearer token header)
-      const chatRes = await chatService.sendMessage(
-        promptText,
-        system_prompt_for_api,
-        sessionId
-      )
+      // If user selected document(s), call askAboutPdf (/api/rag/query)
+      // If no document is selected and only message, call sendMessage (/chat/)
+      let chatRes: { message: string; image_url?: string; imageUrl?: string; images?: string[] }
+      if (hasDocuments && selectedDocuments && selectedDocuments.length > 0) {
+        const queryText = promptText || 'Please summarize this document.'
+        const answer = await askAboutPdf(selectedDocuments[0], queryText)
+        chatRes = { message: answer }
+      } else {
+        chatRes = await chatService.sendMessage(
+          promptText,
+          system_prompt_for_api,
+          sessionId
+        )
+      }
 
-      // 2. Fetch updated messages: API 2 GET /api/chat/history/{sessionId}
+      // Automatically register uploaded document in sidebar list
+      if (hasDocuments) {
+        selectedDocuments!.forEach((file) => {
+          const newDoc: DocumentItem = {
+            id: `doc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            name: file.name,
+            size: `${Math.round(file.size / 1024)} KB`,
+            pages: 1,
+            type: file.type || 'application/pdf',
+            uploadedAt: 'Just now',
+            previewSnippet: `Uploaded document ${file.name} for RAG context in session ${sessionId}.`,
+            topics: ['Uploaded Document', 'PDF RAG'],
+          }
+          setDocuments((prev) => [newDoc, ...prev.filter((d) => d.name !== file.name)])
+        })
+      }
+
+      // 2. Fetch updated messages: API 2 GET /api/chat/history/{sessionId} (for standard chat sessions)
       let syncedMessages: ChatMessage[] = []
-      try {
-        const sessionRes = await chatService.getSessionMessages(sessionId)
-        if (sessionRes?.data?.messages && sessionRes.data.messages.length > 0) {
-          syncedMessages = mapHistoryToMessages(sessionRes.data.messages, new Date(), sessionId)
+      if (!hasDocuments) {
+        try {
+          const sessionRes = await chatService.getSessionMessages(sessionId)
+          if (sessionRes?.data?.messages && sessionRes.data.messages.length > 0) {
+            syncedMessages = mapHistoryToMessages(sessionRes.data.messages, new Date(), sessionId)
+          }
+        } catch (sessionErr) {
+          console.warn('[LandingPage] Failed to fetch session messages from API 2:', sessionErr)
         }
-      } catch (sessionErr) {
-        console.warn('[LandingPage] Failed to fetch session messages from API 2:', sessionErr)
       }
 
       if (syncedMessages.length > 0) {
@@ -386,7 +429,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             c.id === sessionId
               ? {
                 ...c,
-                description: promptText.slice(0, 48),
+                description: sessionSummary.slice(0, 48),
                 updatedAt: 'Just now',
                 messages: syncedMessages,
               }
@@ -457,7 +500,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       setChats((prev) =>
         prev.map((c) =>
           c.id === sessionId
-            ? { ...c, messages: [...c.messages], updatedAt: 'Just now' }
+            ? { ...c, messages: [...c.messages, errorAssistantMsg], updatedAt: 'Just now' }
             : c
         )
       )

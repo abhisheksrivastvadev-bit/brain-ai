@@ -164,6 +164,61 @@
 }
 
 
+.brain-hero-attached-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.brain-hero-attached-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: var(--text-primary);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  max-width: 100%;
+}
+
+.brain-hero-chip-icon {
+  font-size: 0.9rem;
+}
+
+.brain-hero-chip-name {
+  font-weight: 500;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.brain-hero-chip-size {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.brain-hero-chip-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.brain-hero-chip-remove:hover {
+  color: var(--color-error);
+  background: rgba(239, 68, 68, 0.15);
+}
+
 .brain-prompt-input-row {
   width: 100%;
 }

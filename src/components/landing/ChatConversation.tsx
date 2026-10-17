@@ -11,6 +11,7 @@ import {
   DownloadIcon,
   MaximizeIcon,
   CloseIcon,
+  PaperclipIcon,
 } from '../icons'
 import type { ChatSession, User } from '../../types'
 import { UserAvatar } from '../ui/Avatar'
@@ -19,7 +20,7 @@ import './ChatConversation.css'
 interface ChatConversationProps {
   chat: ChatSession
   currentUser: User
-  onSendMessage: (text: string) => void
+  onSendMessage: (text?: string, documents?: File[]) => void
   onBackToNewChat: () => void
   isLoading?: boolean
   onRefreshHistory?: () => void
@@ -31,15 +32,17 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
   onSendMessage,
   onBackToNewChat,
   isLoading = false,
-  onRefreshHistory,
+  onRefreshHistory: _onRefreshHistory,
 }) => {
   const [inputText, setInputText] = useState('')
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null)
   const [copiedImgId, setCopiedImgId] = useState<string | null>(null)
   const [lightboxImage, setLightboxImage] = useState<string | null>(null)
   const [expandedReasoning, setExpandedReasoning] = useState<Record<string, boolean>>({})
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Close lightbox on Escape key
   useEffect(() => {
@@ -104,9 +107,11 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault()
-    if (!inputText.trim() || isLoading) return
-    onSendMessage(inputText.trim())
+    const trimmed = inputText.trim()
+    if ((!trimmed && selectedFiles.length === 0) || isLoading) return
+    onSendMessage(trimmed || undefined, selectedFiles.length > 0 ? selectedFiles : undefined)
     setInputText('')
+    setSelectedFiles([])
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -114,6 +119,18 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
       e.preventDefault()
       handleSubmit()
     }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files)
+      setSelectedFiles((prev) => [...prev, ...newFiles])
+      e.target.value = ''
+    }
+  }
+
+  const handleRemoveFile = (indexToRemove: number) => {
+    setSelectedFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove))
   }
 
   return (
@@ -207,6 +224,19 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
                   </span>
                   <span className="brain-msg-time">{msg.timestamp}</span>
                 </div>
+
+                {/* Attached Documents badge if present */}
+                {msg.documents && msg.documents.length > 0 && (
+                  <div className="brain-msg-attached-docs">
+                    {msg.documents.map((doc, dIdx) => (
+                      <div key={dIdx} className="brain-msg-doc-badge">
+                        <span className="brain-msg-doc-icon">📄</span>
+                        <span className="brain-msg-doc-name">{doc.name}</span>
+                        {doc.size && <span className="brain-msg-doc-size">({doc.size})</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
 
                 {/* Optional Reasoning Collapser */}
@@ -431,12 +461,60 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
       {/* Floating Bottom Input Bar */}
       <footer className="brain-chat-footer">
         <form className="brain-chat-input-container" onSubmit={handleSubmit}>
+          {selectedFiles.length > 0 && (
+            <div className="brain-chat-attached-files">
+              {selectedFiles.map((file, idx) => (
+                <span key={idx} className="brain-chat-attached-chip">
+                  <span className="brain-chat-chip-icon">📄</span>
+                  <span className="brain-chat-chip-name">{file.name}</span>
+                  <span className="brain-chat-chip-size">
+                    ({Math.round(file.size / 1024)} KB)
+                  </span>
+                  <button
+                    type="button"
+                    className="brain-chat-chip-remove"
+                    onClick={() => handleRemoveFile(idx)}
+                    title="Remove document"
+                    aria-label={`Remove ${file.name}`}
+                  >
+                    <CloseIcon size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
           <div className="brain-chat-input-row">
+            <button
+              type="button"
+              className={`brain-chat-attach-btn ${selectedFiles.length > 0 ? 'brain-chat-attach-btn--active' : ''}`}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading}
+              title="Attach document (PDF, TXT, DOCX)"
+              aria-label="Attach document"
+            >
+              <PaperclipIcon size={16} />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.txt,.md"
+              multiple
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
+            />
+
             <textarea
               ref={textareaRef}
               rows={1}
               id="chat-input-textarea"
-              placeholder={isLoading ? 'Brain AI is generating a response...' : `Ask about ${chat.title}...`}
+              placeholder={
+                isLoading
+                  ? 'Brain AI is generating a response...'
+                  : selectedFiles.length > 0
+                  ? 'Ask about the document(s) (optional)...'
+                  : `Ask about ${chat.title}...`
+              }
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -448,7 +526,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
               type="submit"
               className="brain-chat-send-btn"
               id="btn-chat-send"
-              disabled={!inputText.trim() || isLoading}
+              disabled={(!inputText.trim() && selectedFiles.length === 0) || isLoading}
               aria-label="Send message"
             >
               {isLoading ? (
